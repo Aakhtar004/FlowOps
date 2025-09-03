@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login • Modern UI</title>
+  <style>
+    :root {
+      --bg: #0b0f1a;
+      --card: rgba(255,255,255,.06);
+      --card-border: rgba(255,255,255,.12);
+      --text: #e7e9ee;
+      --muted: #9aa3b2;
+      --primary: #6ea8fe;
+      --primary-600:#5a93f0;
+      --ring: rgba(110,168,254,.55);
+      --error: #ff6b6b;
+      --success: #21c78a;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(1200px 800px at 10% 10%, #1a2440 0%, transparent 60%),
+                  radial-gradient(1000px 700px at 90% 30%, #263e6a 0%, transparent 60%),
+                  radial-gradient(900px 600px at 50% 90%, #1e2c4d 0%, transparent 60%),
+                  var(--bg);
+    }
+
+    .card {
+      width: 100%;
+      max-width: 380px;
+      border-radius: 20px;
+      padding: 26px;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      box-shadow: 0 10px 40px rgba(0,0,0,.25);
+      backdrop-filter: blur(12px);
+    }
+
+    form { display: grid; gap: 14px; }
+    form h2 { text-align: center; margin-bottom: 10px; }
+
+    .field { display: grid; gap: 6px; }
+    .label { font-size: 13px; color: var(--muted); }
+    .input {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      background: rgba(255,255,255,.04);
+    }
+    .input input { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-size: 15px; }
+
+    .btn {
+      border: none;
+      cursor: pointer;
+      border-radius: 12px;
+      padding: 12px;
+      font-weight: bold;
+      transition: .2s;
+    }
+    .btn.primary { background: linear-gradient(180deg, var(--primary), var(--primary-600)); color: white; }
+    .btn.secondary { background: transparent; border: 1px solid var(--card-border); color: var(--text); }
+    .btn.full { width: 100%; }
+
+    .helper { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+    .link { color: var(--primary); text-decoration: none; }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <section class="card">
+    <!-- LOGIN -->
+    <form id="panel-login">
+      <h2>Iniciar sesión</h2>
+      <div class="field">
+        <label class="label" for="login-email">Correo o usuario</label>
+        <div class="input">
+          <input id="login-email" type="text" placeholder="tucorreo@dominio.com" required />
+        </div>
+      </div>
+      <div class="field">
+        <label class="label" for="login-password">Contraseña</label>
+        <div class="input">
+          <input id="login-password" type="password" placeholder="•••••••" required />
+        </div>
+      </div>
+      <div class="helper">
+        <label><input type="checkbox" /> Recordarme</label>
+        <a href="#" class="link">¿Olvidaste tu contraseña?</a>
+      </div>
+      <button class="btn primary full" type="submit">Iniciar sesión</button>
+      <button class="btn secondary full" type="button" id="go-signup">Crear una cuenta</button>
+    </form>
+
+    <!-- SIGNUP -->
+    <form id="panel-signup" class="hidden">
+      <h2>Crear cuenta</h2>
+      <div class="field">
+        <label class="label" for="su-name">Nombre completo</label>
+        <div class="input">
+          <input id="su-name" type="text" placeholder="Tu nombre" required />
+        </div>
+      </div>
+      <div class="field">
+        <label class="label" for="su-email">Correo</label>
+        <div class="input">
+          <input id="su-email" type="email" placeholder="tucorreo@dominio.com" required />
+        </div>
+      </div>
+      <div class="field">
+        <label class="label" for="su-password">Contraseña</label>
+        <div class="input">
+          <input id="su-password" type="password" placeholder="Mínimo 6 caracteres" required />
+        </div>
+      </div>
+      <button class="btn primary full" type="submit">Crear cuenta</button>
+      <button class="btn secondary full" type="button" id="go-login">Ya tengo cuenta</button>
+    </form>
+  </section>
+
+  <script>
+    const loginForm = document.getElementById('panel-login');
+    const signupForm = document.getElementById('panel-signup');
+    const goSignup = document.getElementById('go-signup');
+    const goLogin = document.getElementById('go-login');
+
+    goSignup.addEventListener('click', () => {
+      loginForm.classList.add('hidden');
+      signupForm.classList.remove('hidden');
+    });
+
+    goLogin.addEventListener('click', () => {
+      signupForm.classList.add('hidden');
+      loginForm.classList.remove('hidden');
+    });
+  </script>
+</body>
+</html>
