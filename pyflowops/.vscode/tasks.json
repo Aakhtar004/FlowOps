@@ -1,0 +1,21 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Construir y ejecutar PyFlowOps con Docker",
+			"type": "shell",
+			"command": "docker-compose up --build",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Verificar estado de contenedores",
+			"type": "shell",
+			"command": "docker-compose ps",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		}
+	]
+}
