@@ -118,25 +118,6 @@ const IdentityEditor = ({ planId, initialData, onSave }) => {
             )}
           </div>
 
-          {/* Objetivos */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Objetivos Estratégicos
-            </label>
-            <textarea
-              {...register('objectives', { 
-                required: 'Los objetivos son requeridos',
-                minLength: { value: 30, message: 'Los objetivos deben tener al menos 30 caracteres' }
-              })}
-              rows={4}
-              className="input"
-              placeholder="Define los objetivos estratégicos principales..."
-            />
-            {errors.objectives && (
-              <p className="text-red-500 text-sm mt-1">{errors.objectives.message}</p>
-            )}
-          </div>
-
           {/* Botón de guardar */}
           <div className="flex justify-end pt-4">
             <button

@@ -8,6 +8,7 @@ import SwotEditor from '../components/plan/SwotEditor'
 import AnalysisToolsEditor from '../components/plan/AnalysisToolsEditor'
 import StrategiesEditor from '../components/plan/StrategiesEditor'
 import { useState } from 'react'
+import StrategicObjectivesEditor from '../components/plan/StrategicObjectivesEditor'
 
 const PlanEditor = () => {
   const { planId } = useParams()
@@ -49,6 +50,12 @@ const PlanEditor = () => {
       title: 'Identidad Empresarial',
       description: 'Misión, visión, valores y objetivos',
       component: IdentityEditor
+    },
+    {
+      id: 'strategic-objectives',
+      title: 'Objetivos Estratégicos',
+      description: 'Define misión y objetivos estratégicos/específicos',
+      component: StrategicObjectivesEditor
     },
     {
       id: 'swot',
