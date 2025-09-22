@@ -9,6 +9,7 @@ import AnalysisToolsEditor from '../components/plan/AnalysisToolsEditor'
 import StrategiesEditor from '../components/plan/StrategiesEditor'
 import { useState } from 'react'
 import StrategicObjectivesEditor from '../components/plan/StrategicObjectivesEditor'
+import ValueChainDiagnosis from '../components/plan/ValueChainDiagnosis'
 
 const PlanEditor = () => {
   const { planId } = useParams()
@@ -56,6 +57,12 @@ const PlanEditor = () => {
       title: 'Objetivos Estratégicos',
       description: 'Define misión y objetivos estratégicos/específicos',
       component: StrategicObjectivesEditor
+    },
+    {
+      id: 'value-chain-diagnosis',
+      title: 'Cadena de Valor Interna',
+      description: 'Autodiagnóstico de la cadena de valor interna',
+      component: ValueChainDiagnosis
     },
     {
       id: 'swot',
