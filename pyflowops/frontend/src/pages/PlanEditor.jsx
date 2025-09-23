@@ -10,6 +10,8 @@ import StrategiesEditor from '../components/plan/StrategiesEditor'
 import { useState } from 'react'
 import StrategicObjectivesEditor from '../components/plan/StrategicObjectivesEditor'
 import ValueChainDiagnosis from '../components/plan/ValueChainDiagnosis'
+import BCGMatrix from '../components/plan/BCGMatrix'
+import PorterMatrix from '../components/plan/PorterMatrix'
 
 const PlanEditor = () => {
   const { planId } = useParams()
@@ -63,6 +65,18 @@ const PlanEditor = () => {
       title: 'Cadena de Valor Interna',
       description: 'Autodiagnóstico de la cadena de valor interna',
       component: ValueChainDiagnosis
+    },
+    {
+      id: 'bcg-matrix',
+      title: 'Matriz de Crecimiento - Participación BCG',
+      description: 'Matriz BCG',
+      component: BCGMatrix
+    },
+    {
+      id: 'porter-matrix',
+      title: 'Matriz de Porter',
+      description: 'Matriz de análisis competitivo de Porter',
+      component: PorterMatrix
     },
     {
       id: 'swot',
