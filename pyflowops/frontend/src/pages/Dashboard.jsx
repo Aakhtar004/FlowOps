@@ -146,6 +146,9 @@ const Dashboard = () => {
                 <div className="flex items-center text-sm text-gray-500 mb-4">
                   <Calendar className="h-4 w-4 mr-1" />
                   Creado el {formatDate(plan.created_at)}
+                  {plan.updated_at && (
+                    <span className="ml-2">Modificado el {formatDate(plan.updated_at)}</span>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between">
