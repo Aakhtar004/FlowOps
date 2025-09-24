@@ -50,6 +50,12 @@ const ValueChainDiagnosis = () => {
   const addWeakness = () => setWeaknesses([...weaknesses, '']);
   const removeWeakness = (idx) => setWeaknesses(weaknesses.filter((_, i) => i !== idx));
 
+  const handleSave = () => {
+    // Aquí puedes agregar la lógica de guardado si lo necesitas
+    // Por ejemplo, enviar los datos a una API
+    alert('Cadena de Valor guardada');
+  };
+
   return (
     <div className="card">
       <div className="card-header">
@@ -93,11 +99,11 @@ const ValueChainDiagnosis = () => {
       {/* Reflexión y Fortalezas/Debilidades */}
       <div className="mt-8">
         <div className="mb-6 p-4 border rounded bg-blue-50">
-          <div className="text-gray-700 text-sm mb-2">
+          <div className="text-gray-700 text-sm mb-2 px-2 pt-2">
             Reflexione sobre el resultado obtenido. Anote aquellas observaciones que puedan ser de su interés. Identifique sus fortalezas y debilidades respecto a su cadena de valor
           </div>
           <textarea
-            className="w-full border rounded p-2 text-sm"
+            className="w-full border rounded p-2 text-sm px-2"
             rows={5}
             placeholder="Ingresar texto"
             value={reflection}
@@ -106,12 +112,12 @@ const ValueChainDiagnosis = () => {
         </div>
         <div className="mb-6">
           <div className="bg-yellow-100 border-b border-gray-300 text-center font-bold py-1">FORTALEZAS</div>
-          <div className="grid grid-cols-1 border border-gray-300">
+          <div className="w-full border border-gray-300">
             {strengths.map((str, idx) => (
               <div className={`flex${idx < strengths.length - 1 ? ' border-b border-gray-300' : ''}`} key={idx}>
-                <div className="w-16 bg-yellow-200 border-r border-gray-300 flex items-center justify-center">F{idx+1}:</div>
+                <div className="w-32 bg-yellow-200 border-r border-gray-300 flex items-center justify-center px-2">F{idx+1}:</div>
                 <input
-                  className="flex-1 p-2 text-sm"
+                  className="flex-1 p-2 text-sm border-none px-2"
                   type="text"
                   placeholder={`Fortaleza ${idx+1}`}
                   value={str}
@@ -129,12 +135,12 @@ const ValueChainDiagnosis = () => {
         </div>
         <div>
           <div className="bg-green-100 border-b border-gray-300 text-center font-bold py-1">DEBILIDADES</div>
-          <div className="grid grid-cols-1 border border-gray-300">
+          <div className="w-full border border-gray-300">
             {weaknesses.map((w, idx) => (
               <div className={`flex${idx < weaknesses.length - 1 ? ' border-b border-gray-300' : ''}`} key={idx}>
-                <div className="w-16 bg-green-200 border-r border-gray-300 flex items-center justify-center">D{idx+1}:</div>
+                <div className="w-32 bg-green-200 border-r border-gray-300 flex items-center justify-center px-2">D{idx+1}:</div>
                 <input
-                  className="flex-1 p-2 text-sm"
+                  className="flex-1 p-2 text-sm border-none px-2"
                   type="text"
                   placeholder={`Debilidad ${idx+1}`}
                   value={w}
@@ -149,6 +155,11 @@ const ValueChainDiagnosis = () => {
             ))}
           </div>
           <button type="button" className="btn-secondary mt-2" onClick={addWeakness}>+ Añadir debilidad</button>
+        </div>
+        <div className="flex justify-end pt-4">
+          <button type="button" className="btn-primary" onClick={handleSave}>
+            Guardar Cadena de Valor
+          </button>
         </div>
       </div>
     </div>

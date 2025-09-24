@@ -4,14 +4,14 @@ import { usePlan } from '../hooks/useApi'
 import { useToast } from '../components/ui/Toast'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import IdentityEditor from '../components/plan/IdentityEditor'
-import SwotEditor from '../components/plan/SwotEditor'
-import AnalysisToolsEditor from '../components/plan/AnalysisToolsEditor'
-import StrategiesEditor from '../components/plan/StrategiesEditor'
 import { useState } from 'react'
 import StrategicObjectivesEditor from '../components/plan/StrategicObjectivesEditor'
 import ValueChainDiagnosis from '../components/plan/ValueChainDiagnosis'
 import BCGMatrix from '../components/plan/BCGMatrix'
 import PorterMatrix from '../components/plan/PorterMatrix'
+import PESTMatrix from '../components/plan/PESTMatrix'
+import StrategiesIdentification from '../components/plan/StrategiesIdentification'
+import CAMEMatrix from '../components/plan/CAMEMatrix'
 
 const PlanEditor = () => {
   const { planId } = useParams()
@@ -79,23 +79,23 @@ const PlanEditor = () => {
       component: PorterMatrix
     },
     {
-      id: 'swot',
-      title: 'Análisis SWOT',
-      description: 'Fortalezas, debilidades, oportunidades y amenazas',
-      component: SwotEditor
+      id: 'pest-matrix',
+      title: 'PEST',
+      description: 'Autodiagnóstico Entorno Global P.E.S.T.',
+      component: PESTMatrix
     },
     {
-      id: 'tools',
-      title: 'Herramientas de Análisis',
-      description: 'Cadena de valor, Porter, PEST, etc.',
-      component: AnalysisToolsEditor
+      id: 'strategies-identification',
+      title: 'Identificación de Estrategias',
+      description: 'Identifica y lista las estrategias de tu empresa',
+      component: StrategiesIdentification
     },
     {
-      id: 'strategies',
-      title: 'Estrategias',
-      description: 'Definición de estrategias y matriz GAME',
-      component: StrategiesEditor
-    }
+      id: 'came-matrix',
+      title: 'Matriz CAME',
+      description: 'Construye la Matriz CAME para tu empresa',
+      component: CAMEMatrix
+    },
   ]
 
   if (isLoading) {
@@ -187,27 +187,7 @@ const PlanEditor = () => {
       </div>
 
       {/* Progress Indicator */}
-      <div className="mt-12 p-6 bg-gray-50 rounded-lg">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Progreso del Plan</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {sections.map((section) => {
-            const isCompleted = plan?.[section.id] && Object.keys(plan[section.id]).length > 0
-            return (
-              <div
-                key={section.id}
-                className={`p-3 rounded-lg text-center ${
-                  isCompleted ? 'bg-green-100 text-green-800' : 'bg-white text-gray-600'
-                }`}
-              >
-                <div className="text-sm font-medium">{section.title}</div>
-                <div className="text-xs mt-1">
-                  {isCompleted ? 'Completado' : 'Pendiente'}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
+      {/* ...existing code... */}
     </div>
   )
 }

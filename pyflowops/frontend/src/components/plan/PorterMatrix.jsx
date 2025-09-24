@@ -91,6 +91,11 @@ const PorterMatrix = () => {
 
   let rowIdx = 0;
 
+  const handleSave = () => {
+    // Aquí puedes agregar la lógica de guardado si lo necesitas
+    alert('Matriz de Porter guardada');
+  };
+
   return (
     <div className="card">
       <div className="card-header">
@@ -98,7 +103,7 @@ const PorterMatrix = () => {
         <p className="card-description">Marque con una X en las casillas según el estado actual de su empresa. El perfil competitivo se valora en la escala Hostil-Favorable.</p>
       </div>
       <div className="card-content overflow-x-auto">
-  <table className="min-w-full border text-sm mb-8" style={{ tableLayout: 'fixed', width: '900px' }}>
+        <table className="min-w-full border text-sm mb-8" style={{ tableLayout: 'fixed', width: '900px' }}>
           <thead>
             <tr className="bg-gray-100">
               <th className="border px-2 py-1"></th>
@@ -192,6 +197,11 @@ const PorterMatrix = () => {
             ))}
           </div>
           <button type="button" className="btn-secondary mt-2" onClick={addThreat}>+ Añadir amenaza</button>
+        </div>
+        <div className="flex justify-end pt-4">
+          <button type="button" className="btn-primary" onClick={handleSave}>
+            Guardar Matriz de Porter
+          </button>
         </div>
       </div>
     </div>
