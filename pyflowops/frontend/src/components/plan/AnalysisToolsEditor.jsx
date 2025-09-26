@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Save, BarChart3, Users, Shield, Compass } from 'lucide-react'
 import { useToast } from '../ui/Toast'
+import { useAnalysisTools } from '../../hooks/useApi'
 
-const AnalysisToolsEditor = ({ planId, initialData, onSave }) => {
+const AnalysisToolsEditor = ({ planId, onSave }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('value_chain')
-  const { success, error } = useToast()
+  const { success, error: showError } = useToast()
+  const { tools: toolsData, isLoading: dataLoading, updateTools } = useAnalysisTools(planId)
   
   const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm({
     defaultValues: {
@@ -18,31 +20,40 @@ const AnalysisToolsEditor = ({ planId, initialData, onSave }) => {
   })
 
   useEffect(() => {
-    if (initialData) {
-      reset(initialData)
+    if (toolsData) {
+      console.log('Analysis tools data received:', toolsData) // Debug log
+      
+      // Map database fields to form fields - simplified for now
+      const formData = {
+        value_chain: toolsData.value_chain_primary && Object.keys(toolsData.value_chain_primary).length > 0 ? JSON.stringify(toolsData.value_chain_primary, null, 2) : '',
+        participation_matrix: toolsData.participation_matrix && Object.keys(toolsData.participation_matrix).length > 0 ? JSON.stringify(toolsData.participation_matrix, null, 2) : '',
+        porter_forces: toolsData.porter_competitive_rivalry || '',
+        pest_analysis: toolsData.pest_political || ''
+      }
+      console.log('Analysis tools form data after processing:', formData) // Debug log
+      reset(formData)
     }
-  }, [initialData, reset])
+  }, [toolsData, reset])
 
   const onSubmit = async (data) => {
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/v1/plans/${planId}/tools`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        },
-        body: JSON.stringify(data)
-      })
+      console.log('Submitting tools data:', data) // Debug log
       
-      if (!response.ok) {
-        throw new Error('Error al guardar las herramientas de análisis')
+      // Convertir datos del formulario al formato esperado por el backend
+      const processedData = {
+        value_chain_primary: data.value_chain ? JSON.parse(data.value_chain) : {},
+        participation_matrix: data.participation_matrix ? JSON.parse(data.participation_matrix) : {},
+        porter_competitive_rivalry: data.porter_forces || null,
+        pest_political: data.pest_analysis || null
       }
       
-      await onSave(data)
+      await updateTools(processedData)
       success('Herramientas de análisis guardadas correctamente')
+      if (onSave) await onSave(processedData)
     } catch (err) {
-      error('Error al guardar las herramientas de análisis')
+      console.error('Submit error:', err)
+      showError('Error al guardar las herramientas de análisis')
     } finally {
       setIsLoading(false)
     }

@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Save, Target, Lightbulb } from 'lucide-react'
 import { useToast } from '../ui/Toast'
+import { useStrategies } from '../../hooks/useApi'
 
-const StrategiesEditor = ({ planId, initialData, onSave }) => {
+const StrategiesEditor = ({ planId, onSave }) => {
   const [isLoading, setIsLoading] = useState(false)
-  const { success, error } = useToast()
+  const { success, error: showError } = useToast()
+  const { strategies: strategiesData, isLoading: dataLoading, updateStrategies } = useStrategies(planId)
   
   const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm({
     defaultValues: {
@@ -17,31 +19,40 @@ const StrategiesEditor = ({ planId, initialData, onSave }) => {
   })
 
   useEffect(() => {
-    if (initialData) {
-      reset(initialData)
+    if (strategiesData) {
+      console.log('Strategies data received:', strategiesData) // Debug log
+      
+      // Los datos ya vienen como arrays gracias a los validadores de Pydantic
+      const formData = {
+        strategies: Array.isArray(strategiesData.strategy_identification) ? strategiesData.strategy_identification.join('\n') : (strategiesData.strategy_identification || ''),
+        game_matrix: Array.isArray(strategiesData.game_growth) ? strategiesData.game_growth.join('\n') : (strategiesData.game_growth || ''),
+        implementation_timeline: typeof strategiesData.implementation_timeline === 'object' ? JSON.stringify(strategiesData.implementation_timeline, null, 2) : (strategiesData.implementation_timeline || ''),
+        success_indicators: Array.isArray(strategiesData.priority_strategies) ? strategiesData.priority_strategies.join('\n') : (strategiesData.priority_strategies || '')
+      }
+      console.log('Strategies form data after processing:', formData) // Debug log
+      reset(formData)
     }
-  }, [initialData, reset])
+  }, [strategiesData, reset])
 
   const onSubmit = async (data) => {
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/v1/plans/${planId}/strategies-simple`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        },
-        body: JSON.stringify(data)
-      })
+      console.log('Submitting strategies data:', data) // Debug log
       
-      if (!response.ok) {
-        throw new Error('Error al guardar las estrategias')
+      // Convertir strings a arrays donde sea necesario
+      const processedData = {
+        strategy_identification: data.strategies ? data.strategies.split('\n').filter(s => s.trim()) : [],
+        game_growth: data.game_matrix ? data.game_matrix.split('\n').filter(g => g.trim()) : [],
+        implementation_timeline: data.implementation_timeline ? JSON.parse(data.implementation_timeline) : {},
+        priority_strategies: data.success_indicators ? data.success_indicators.split('\n').filter(p => p.trim()) : []
       }
       
-      await onSave(data)
+      await updateStrategies(processedData)
       success('Estrategias guardadas correctamente')
+      if (onSave) await onSave(processedData)
     } catch (err) {
-      error('Error al guardar las estrategias')
+      console.error('Submit error:', err)
+      showError('Error al guardar las estrategias')
     } finally {
       setIsLoading(false)
     }

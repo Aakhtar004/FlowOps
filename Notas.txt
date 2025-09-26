@@ -1,3 +1,0 @@
-Mejorar la exportación a PDF o excel
-Mejorar el Dashboard
-Optimizar bien el backend

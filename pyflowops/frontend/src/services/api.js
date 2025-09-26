@@ -3,7 +3,7 @@ import toast from 'react-hot-toast'
 
 // Configuración base de Axios
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+  baseURL: '/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -57,12 +57,12 @@ api.interceptors.response.use(
 // Funciones de autenticación
 export const authAPI = {
   register: async (userData) => {
-    const response = await api.post('/api/v1/auth/register', userData)
+    const response = await api.post('/v1/auth/register', userData)
     return response.data
   },
 
   login: async (credentials) => {
-    const response = await api.post('/api/v1/auth/login', credentials, {
+    const response = await api.post('/v1/auth/login', credentials, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
@@ -71,12 +71,12 @@ export const authAPI = {
   },
 
   logout: async () => {
-    const response = await api.post('/api/v1/auth/logout')
+    const response = await api.post('/v1/auth/logout')
     return response.data
   },
 
   getProfile: async () => {
-    const response = await api.get('/api/v1/auth/me')
+    const response = await api.get('/v1/auth/me')
     return response.data
   },
 }
@@ -84,17 +84,17 @@ export const authAPI = {
 // Funciones para planes estratégicos
 export const plansAPI = {
   getAll: async () => {
-    const response = await api.get('/api/v1/plans/')
+    const response = await api.get('/v1/plans/')
     return response.data
   },
 
   getById: async (planId) => {
-    const response = await api.get(`/api/v1/plans/${planId}`)
+    const response = await api.get(`/v1/plans/${planId}`)
     return response.data
   },
 
   create: async (planData) => {
-    const response = await api.post('/api/v1/plans/', planData)
+    const response = await api.post('/v1/plans/', planData)
     return response.data
   },
 
@@ -104,57 +104,57 @@ export const plansAPI = {
   },
 
   delete: async (planId) => {
-    const response = await api.delete(`/api/v1/plans/${planId}`)
+    const response = await api.delete(`/v1/plans/${planId}`)
     return response.data
   },
 
   // Identidad de la empresa
   getCompanyIdentity: async (planId) => {
-    const response = await api.get(`/api/v1/plans/${planId}/company-identity`)
+    const response = await api.get(`/v1/plans/${planId}/company-identity`)
     return response.data
   },
 
   updateCompanyIdentity: async (planId, identityData) => {
-    const response = await api.put(`/api/v1/plans/${planId}/company-identity`, identityData)
+    const response = await api.put(`/v1/plans/${planId}/company-identity`, identityData)
     return response.data
   },
 
   // Análisis estratégico
   getStrategicAnalysis: async (planId) => {
-    const response = await api.get(`/api/v1/plans/${planId}/strategic-analysis`)
+    const response = await api.get(`/v1/plans/${planId}/strategic-analysis`)
     return response.data
   },
 
   updateStrategicAnalysis: async (planId, analysisData) => {
-    const response = await api.put(`/api/v1/plans/${planId}/strategic-analysis`, analysisData)
+    const response = await api.put(`/v1/plans/${planId}/strategic-analysis`, analysisData)
     return response.data
   },
 
   // Herramientas de análisis
   getAnalysisTools: async (planId) => {
-    const response = await api.get(`/api/v1/plans/${planId}/analysis-tools`)
+    const response = await api.get(`/v1/plans/${planId}/analysis-tools`)
     return response.data
   },
 
   updateAnalysisTools: async (planId, toolsData) => {
-    const response = await api.put(`/api/v1/plans/${planId}/analysis-tools`, toolsData)
+    const response = await api.put(`/v1/plans/${planId}/analysis-tools`, toolsData)
     return response.data
   },
 
   // Estrategias
   getStrategies: async (planId) => {
-    const response = await api.get(`/api/v1/plans/${planId}/strategies`)
+    const response = await api.get(`/v1/plans/${planId}/strategies`)
     return response.data
   },
 
   updateStrategies: async (planId, strategiesData) => {
-    const response = await api.put(`/api/v1/plans/${planId}/strategies`, strategiesData)
+    const response = await api.put(`/v1/plans/${planId}/strategies`, strategiesData)
     return response.data
   },
 
   // Resumen ejecutivo
   getExecutiveSummary: async (planId) => {
-    const response = await api.get(`/api/v1/plans/${planId}/executive-summary`)
+    const response = await api.get(`/v1/plans/${planId}/executive-summary`)
     return response.data
   },
 }

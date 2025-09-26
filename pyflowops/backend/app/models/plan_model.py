@@ -60,7 +60,9 @@ class CompanyIdentity(Base):
     mission = Column(Text, nullable=True)
     vision = Column(Text, nullable=True)
     values = Column(Text, nullable=True)  # JSON string para múltiples valores
-    objectives = Column(Text, nullable=True)  # JSON string para múltiples objetivos
+    
+    # Campo para objetivos estratégicos detallados
+    general_objectives = Column(Text, nullable=True)  # JSON string para objetivos generales con específicos
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

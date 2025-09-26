@@ -108,16 +108,26 @@ const ResumenPage = () => {
                     <p className="text-sm text-gray-600">{summary.company_identity.vision}</p>
                   </div>
                 )}
-                {summary.company_identity.values && summary.company_identity.values.length > 0 && (
-                  <div>
-                    <h4 className="font-medium text-gray-900">Valores</h4>
-                    <ul className="text-sm text-gray-600 list-disc list-inside">
-                      {summary.company_identity.values.map((value, index) => (
-                        <li key={index}>{value}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                {summary.company_identity.values && (() => {
+                  try {
+                    const valuesArray = typeof summary.company_identity.values === 'string' 
+                      ? JSON.parse(summary.company_identity.values) 
+                      : summary.company_identity.values;
+                    return valuesArray && valuesArray.length > 0 ? (
+                      <div>
+                        <h4 className="font-medium text-gray-900">Valores</h4>
+                        <ul className="text-sm text-gray-600 list-disc list-inside">
+                          {valuesArray.map((value, index) => (
+                            <li key={index}>{value}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null;
+                  } catch (e) {
+                    console.error('Error parsing values:', e);
+                    return null;
+                  }
+                })()}
               </div>
             ) : (
               <p className="text-sm text-gray-500 italic">Sección pendiente de completar</p>

@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Save, TrendingUp, TrendingDown, Zap, AlertTriangle } from 'lucide-react'
 import { useToast } from '../ui/Toast'
+import { useStrategicAnalysis } from '../../hooks/useApi'
 
-const SwotEditor = ({ planId, initialData, onSave }) => {
+const SwotEditor = ({ planId, onSave }) => {
   const [isLoading, setIsLoading] = useState(false)
-  const { success, error } = useToast()
+  const { success, error: showError } = useToast()
+  const { analysis: swotData, isLoading: dataLoading, updateAnalysis } = useStrategicAnalysis(planId)
   
   const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm({
     defaultValues: {
@@ -17,31 +19,40 @@ const SwotEditor = ({ planId, initialData, onSave }) => {
   })
 
   useEffect(() => {
-    if (initialData) {
-      reset(initialData)
+    if (swotData) {
+      console.log('SWOT data received:', swotData) // Debug log
+      
+      // Los datos ya vienen como arrays gracias a los validadores de Pydantic
+      const formData = {
+        strengths: Array.isArray(swotData.internal_strengths) ? swotData.internal_strengths.join('\n') : (swotData.internal_strengths || ''),
+        weaknesses: Array.isArray(swotData.internal_weaknesses) ? swotData.internal_weaknesses.join('\n') : (swotData.internal_weaknesses || ''),
+        opportunities: Array.isArray(swotData.external_opportunities) ? swotData.external_opportunities.join('\n') : (swotData.external_opportunities || ''),
+        threats: Array.isArray(swotData.external_threats) ? swotData.external_threats.join('\n') : (swotData.external_threats || '')
+      }
+      console.log('SWOT form data after processing:', formData) // Debug log
+      reset(formData)
     }
-  }, [initialData, reset])
+  }, [swotData, reset])
 
   const onSubmit = async (data) => {
     setIsLoading(true)
     try {
-      const response = await fetch(`/api/v1/plans/${planId}/swot`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        },
-        body: JSON.stringify(data)
-      })
+      console.log('Submitting SWOT data:', data) // Debug log
       
-      if (!response.ok) {
-        throw new Error('Error al guardar el análisis SWOT')
+      // Convertir strings a arrays donde sea necesario
+      const processedData = {
+        internal_strengths: data.strengths ? data.strengths.split('\n').filter(s => s.trim()) : [],
+        internal_weaknesses: data.weaknesses ? data.weaknesses.split('\n').filter(w => w.trim()) : [],
+        external_opportunities: data.opportunities ? data.opportunities.split('\n').filter(o => o.trim()) : [],
+        external_threats: data.threats ? data.threats.split('\n').filter(t => t.trim()) : []
       }
       
-      await onSave(data)
+      await updateAnalysis(processedData)
       success('Análisis SWOT guardado correctamente')
+      if (onSave) await onSave(processedData)
     } catch (err) {
-      error('Error al guardar el análisis SWOT')
+      console.error('Submit error:', err)
+      showError('Error al guardar el análisis SWOT')
     } finally {
       setIsLoading(false)
     }

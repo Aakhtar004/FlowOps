@@ -70,6 +70,56 @@ function App() {
               }
             />
             <Route
+              path="/plan/:planId/identidad"
+              element={
+                isAuthenticated ? (
+                  <PlanEditor />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/plan/:planId/cadena-valor"
+              element={
+                isAuthenticated ? (
+                  <PlanEditor />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/plan/:planId/swot"
+              element={
+                isAuthenticated ? (
+                  <PlanEditor />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/plan/:planId/herramientas"
+              element={
+                isAuthenticated ? (
+                  <PlanEditor />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/plan/:planId/estrategias"
+              element={
+                isAuthenticated ? (
+                  <PlanEditor />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
               path="/plan/:planId/resumen"
               element={
                 isAuthenticated ? (

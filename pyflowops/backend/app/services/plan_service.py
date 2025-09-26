@@ -103,7 +103,7 @@ class PlanService:
             # Actualizar existente
             update_data = identity_data.dict(exclude_unset=True)
             for field, value in update_data.items():
-                if field in ['values', 'objectives'] and value is not None:
+                if field in ['values', 'general_objectives'] and value is not None:
                     setattr(identity, field, json.dumps(value))
                 else:
                     setattr(identity, field, value)
@@ -113,8 +113,8 @@ class PlanService:
                 strategic_plan_id=plan_id,
                 mission=identity_data.mission,
                 vision=identity_data.vision,
-                values=json.dumps(identity_data.values or []),
-                objectives=json.dumps(identity_data.objectives or [])
+                values=json.dumps(identity_data.values) if identity_data.values is not None else None,
+                general_objectives=json.dumps(identity_data.general_objectives) if identity_data.general_objectives is not None else None
             )
             db.add(identity)
         
@@ -162,10 +162,10 @@ class PlanService:
             # Crear nuevo
             analysis = StrategicAnalysis(
                 strategic_plan_id=plan_id,
-                internal_strengths=json.dumps(analysis_data.internal_strengths or []),
-                internal_weaknesses=json.dumps(analysis_data.internal_weaknesses or []),
-                external_opportunities=json.dumps(analysis_data.external_opportunities or []),
-                external_threats=json.dumps(analysis_data.external_threats or []),
+                internal_strengths=json.dumps(analysis_data.internal_strengths) if analysis_data.internal_strengths is not None else None,
+                internal_weaknesses=json.dumps(analysis_data.internal_weaknesses) if analysis_data.internal_weaknesses is not None else None,
+                external_opportunities=json.dumps(analysis_data.external_opportunities) if analysis_data.external_opportunities is not None else None,
+                external_threats=json.dumps(analysis_data.external_threats) if analysis_data.external_threats is not None else None,
                 swot_summary=analysis_data.swot_summary
             )
             db.add(analysis)
@@ -214,9 +214,9 @@ class PlanService:
             # Crear nuevo
             tools = AnalysisTools(
                 strategic_plan_id=plan_id,
-                value_chain_primary=json.dumps(tools_data.value_chain_primary or {}),
-                value_chain_support=json.dumps(tools_data.value_chain_support or {}),
-                participation_matrix=json.dumps(tools_data.participation_matrix or {}),
+                value_chain_primary=json.dumps(tools_data.value_chain_primary) if tools_data.value_chain_primary is not None else None,
+                value_chain_support=json.dumps(tools_data.value_chain_support) if tools_data.value_chain_support is not None else None,
+                participation_matrix=json.dumps(tools_data.participation_matrix) if tools_data.participation_matrix is not None else None,
                 porter_competitive_rivalry=tools_data.porter_competitive_rivalry,
                 porter_supplier_power=tools_data.porter_supplier_power,
                 porter_buyer_power=tools_data.porter_buyer_power,
@@ -275,13 +275,13 @@ class PlanService:
             # Crear nuevo
             strategies = Strategies(
                 strategic_plan_id=plan_id,
-                strategy_identification=json.dumps(strategies_data.strategy_identification or []),
-                game_growth=json.dumps(strategies_data.game_growth or []),
-                game_avoid=json.dumps(strategies_data.game_avoid or []),
-                game_merge=json.dumps(strategies_data.game_merge or []),
-                game_exit=json.dumps(strategies_data.game_exit or []),
-                priority_strategies=json.dumps(strategies_data.priority_strategies or []),
-                implementation_timeline=json.dumps(strategies_data.implementation_timeline or {})
+                strategy_identification=json.dumps(strategies_data.strategy_identification) if strategies_data.strategy_identification is not None else None,
+                game_growth=json.dumps(strategies_data.game_growth) if strategies_data.game_growth is not None else None,
+                game_avoid=json.dumps(strategies_data.game_avoid) if strategies_data.game_avoid is not None else None,
+                game_merge=json.dumps(strategies_data.game_merge) if strategies_data.game_merge is not None else None,
+                game_exit=json.dumps(strategies_data.game_exit) if strategies_data.game_exit is not None else None,
+                priority_strategies=json.dumps(strategies_data.priority_strategies) if strategies_data.priority_strategies is not None else None,
+                implementation_timeline=json.dumps(strategies_data.implementation_timeline) if strategies_data.implementation_timeline is not None else None
             )
             db.add(strategies)
         
@@ -302,57 +302,290 @@ class PlanService:
     
     # Resumen Ejecutivo
     @staticmethod
-    def generate_executive_summary(db: Session, plan_id: int, owner_id: int) -> Optional[Dict[str, Any]]:
-        """Generar resumen ejecutivo del plan estratégico."""
+    def generate_executive_summary(db: Session, plan_id: int, owner_id: int):
+        """Generar resumen ejecutivo completo del plan estratégico."""
+        from app.schemas.plan_schema import StrategicAnalysis, AnalysisTools, Strategies
+
         plan = PlanService.get_strategic_plan(db, plan_id, owner_id)
         if not plan:
             return None
-        
+
         # Obtener todos los componentes
         identity = PlanService.get_company_identity(db, plan_id, owner_id)
         analysis = PlanService.get_strategic_analysis(db, plan_id, owner_id)
         tools = PlanService.get_analysis_tools(db, plan_id, owner_id)
         strategies = PlanService.get_strategies(db, plan_id, owner_id)
-        
-        # Calcular porcentaje de completitud
-        completion_count = 0
-        total_sections = 4
-        
-        if identity and (identity.mission or identity.vision):
-            completion_count += 1
-        if analysis and (analysis.internal_strengths or analysis.external_opportunities):
-            completion_count += 1
-        if tools and (tools.porter_competitive_rivalry or tools.pest_political):
-            completion_count += 1
-        if strategies and strategies.strategy_identification:
-            completion_count += 1
-        
-        completion_percentage = (completion_count / total_sections) * 100
-        
-        # Generar insights y recomendaciones básicas
-        key_insights = []
-        recommendations = []
-        
-        if analysis:
+
+        # Función auxiliar para parsear JSON de forma segura
+        def safe_json_parse(data):
+            if not data:
+                return []
             try:
-                strengths = json.loads(analysis.internal_strengths or "[]")
-                opportunities = json.loads(analysis.external_opportunities or "[]")
-                if strengths and opportunities:
-                    key_insights.append("Se identificaron fortalezas internas que pueden apalancarse con oportunidades externas.")
-                    recommendations.append("Desarrollar estrategias que maximicen las fortalezas identificadas.")
+                if isinstance(data, str):
+                    return json.loads(data)
+                return data
             except:
-                pass
-        
-        if completion_percentage < 50:
-            recommendations.append("Se recomienda completar más secciones del plan para obtener un análisis más completo.")
-        
-        return {
-            "strategic_plan": plan,
-            "company_identity": identity,
-            "strategic_analysis": analysis,
-            "analysis_tools": tools,
-            "strategies": strategies,
-            "completion_percentage": completion_percentage,
-            "key_insights": key_insights,
-            "recommendations": recommendations
+                return []
+
+        # Estructurar el resumen ejecutivo completo
+        created_at_val = getattr(plan, 'created_at', None)
+        updated_at_val = getattr(plan, 'updated_at', None)
+
+        summary = {
+            "plan_info": {
+                "title": plan.title,
+                "description": plan.description,
+                "created_at": created_at_val.isoformat() if created_at_val else None,
+                "updated_at": updated_at_val.isoformat() if updated_at_val else None
+            },
+            "company_identity": {},
+            "strategic_analysis": {},
+            "analysis_tools": {},
+            "strategies": {},
+            "completion_status": {},
+            "key_insights": [],
+            "recommendations": []
         }
+
+        # 1. IDENTIDAD EMPRESARIAL
+        if identity:
+            summary["company_identity"] = {
+                "mission": identity.mission,
+                "vision": identity.vision,
+                "values": safe_json_parse(identity.values),
+                "general_objectives": safe_json_parse(identity.general_objectives)
+            }
+
+            # Calcular completitud de identidad
+            has_mission = identity.mission is not None and str(identity.mission).strip() != ""
+            has_vision = identity.vision is not None and str(identity.vision).strip() != ""
+            has_values = identity.values is not None and str(identity.values).strip() != ""
+            identity_complete = has_mission and has_vision and has_values
+            summary["completion_status"]["company_identity"] = {
+                "completed": identity_complete,
+                "percentage": 100 if identity_complete else (67 if (has_mission and has_vision) else (33 if has_mission or has_vision else 0))
+            }
+
+        # 2. ANÁLISIS ESTRATÉGICO
+        if analysis:
+            summary["strategic_analysis"] = {
+                "internal_analysis": {
+                    "strengths": safe_json_parse(analysis.internal_strengths),
+                    "weaknesses": safe_json_parse(analysis.internal_weaknesses)
+                },
+                "external_analysis": {
+                    "opportunities": safe_json_parse(analysis.external_opportunities),
+                    "threats": safe_json_parse(analysis.external_threats)
+                },
+                "swot_summary": analysis.swot_summary
+            }
+
+            # Calcular completitud de análisis
+            has_internal = bool(analysis.internal_strengths or analysis.internal_weaknesses)
+            has_external = bool(analysis.external_opportunities or analysis.external_threats)
+            analysis_complete = has_internal and has_external
+            summary["completion_status"]["strategic_analysis"] = {
+                "completed": analysis_complete,
+                "percentage": 100 if analysis_complete else (50 if has_internal or has_external else 0)
+            }
+
+        # 3. HERRAMIENTAS DE ANÁLISIS
+        if tools:
+            summary["analysis_tools"] = {
+                "value_chain": {
+                    "primary_activities": safe_json_parse(tools.value_chain_primary),
+                    "support_activities": safe_json_parse(tools.value_chain_support)
+                },
+                "participation_matrix": safe_json_parse(tools.participation_matrix),
+                "porter_five_forces": {
+                    "competitive_rivalry": tools.porter_competitive_rivalry,
+                    "supplier_power": tools.porter_supplier_power,
+                    "buyer_power": tools.porter_buyer_power,
+                    "threat_substitutes": tools.porter_threat_substitutes,
+                    "threat_new_entrants": tools.porter_threat_new_entrants
+                },
+                "pest_analysis": {
+                    "political": tools.pest_political,
+                    "economic": tools.pest_economic,
+                    "social": tools.pest_social,
+                    "technological": tools.pest_technological
+                }
+            }
+
+            # Calcular completitud de herramientas
+            has_value_chain = bool(tools.value_chain_primary or tools.value_chain_support)
+            has_porter = bool(tools.porter_competitive_rivalry or tools.porter_supplier_power or
+                            tools.porter_buyer_power or tools.porter_threat_substitutes or tools.porter_threat_new_entrants)
+            has_pest = bool(tools.pest_political or tools.pest_economic or tools.pest_social or tools.pest_technological)
+            tools_complete = has_value_chain and has_porter and has_pest
+            summary["completion_status"]["analysis_tools"] = {
+                "completed": tools_complete,
+                "percentage": (100 if tools_complete else
+                             75 if (has_value_chain and has_porter) or (has_value_chain and has_pest) or (has_porter and has_pest) else
+                             50 if has_value_chain or has_porter or has_pest else 0)
+            }
+
+        # 4. ESTRATEGIAS
+        if strategies:
+            summary["strategies"] = {
+                "strategy_identification": safe_json_parse(strategies.strategy_identification),
+                "game_matrix": {
+                    "growth_strategies": safe_json_parse(strategies.game_growth),
+                    "avoid_strategies": safe_json_parse(strategies.game_avoid),
+                    "merge_strategies": safe_json_parse(strategies.game_merge),
+                    "exit_strategies": safe_json_parse(strategies.game_exit)
+                },
+                "priority_strategies": safe_json_parse(strategies.priority_strategies),
+                "implementation_timeline": safe_json_parse(strategies.implementation_timeline)
+            }
+
+            # Calcular completitud de estrategias
+            has_identification = bool(strategies.strategy_identification)
+            has_game = bool(strategies.game_growth or strategies.game_avoid or strategies.game_merge or strategies.game_exit)
+            has_priorities = bool(strategies.priority_strategies)
+            strategies_complete = has_identification and has_game and has_priorities
+            summary["completion_status"]["strategies"] = {
+                "completed": strategies_complete,
+                "percentage": (100 if strategies_complete else
+                             67 if (has_identification and has_game) or (has_identification and has_priorities) or (has_game and has_priorities) else
+                             33 if has_identification or has_game or has_priorities else 0)
+            }
+
+        # Calcular porcentaje total de completitud
+        total_sections = 4
+        completed_sections = sum(1 for status in summary["completion_status"].values() if status.get("completed", False))
+        total_percentage = sum(status.get("percentage", 0) for status in summary["completion_status"].values()) / total_sections
+        summary["completion_status"]["overall"] = {
+            "completed_sections": completed_sections,
+            "total_sections": total_sections,
+            "percentage": round(total_percentage, 1)
+        }
+
+        # Generar insights y recomendaciones basados en los datos
+        summary["key_insights"] = PlanService._generate_key_insights(summary)
+        summary["recommendations"] = PlanService._generate_recommendations(summary)
+
+        # Convertir a objeto Pydantic para validación
+        from app.schemas.plan_schema import ExecutiveSummary
+        return ExecutiveSummary(**summary)
+
+    @staticmethod
+    def _generate_key_insights(summary: Dict[str, Any]) -> List[str]:
+        """Generar insights clave basados en los datos del resumen."""
+        insights = []
+
+        # Insights de identidad empresarial
+        identity = summary.get("company_identity", {})
+        if identity.get("mission") and identity.get("vision"):
+            insights.append("La empresa tiene una identidad clara con misión y visión bien definidas.")
+
+        objectives = identity.get("general_objectives", [])
+        if objectives:
+            insights.append(f"Se han definido {len(objectives)} objetivos estratégicos generales con sus respectivos objetivos específicos.")
+
+        # Insights de análisis estratégico
+        analysis = summary.get("strategic_analysis", {})
+        internal = analysis.get("internal_analysis", {})
+        external = analysis.get("external_analysis", {})
+
+        strengths = internal.get("strengths", [])
+        weaknesses = internal.get("weaknesses", [])
+        opportunities = external.get("opportunities", [])
+        threats = external.get("threats", [])
+
+        if strengths:
+            insights.append(f"Se identificaron {len(strengths)} fortalezas internas que pueden ser aprovechadas.")
+        if opportunities:
+            insights.append(f"Se detectaron {len(opportunities)} oportunidades en el entorno externo.")
+        if weaknesses:
+            insights.append(f"Se identificaron {len(weaknesses)} áreas de mejora interna.")
+        if threats:
+            insights.append(f"Se reconocieron {len(threats)} amenazas en el entorno externo.")
+
+        # Insights de herramientas de análisis
+        tools = summary.get("analysis_tools", {})
+        value_chain = tools.get("value_chain", {})
+        porter = tools.get("porter_five_forces", {})
+        pest = tools.get("pest_analysis", {})
+
+        if value_chain.get("primary_activities") or value_chain.get("support_activities"):
+            insights.append("Se ha realizado un análisis detallado de la cadena de valor de la empresa.")
+
+        porter_complete = all(porter.get(field) for field in ["competitive_rivalry", "supplier_power", "buyer_power", "threat_substitutes", "threat_new_entrants"])
+        if porter_complete:
+            insights.append("Se completó el análisis de las 5 fuerzas de Porter para entender la competencia del sector.")
+
+        pest_complete = all(pest.get(field) for field in ["political", "economic", "social", "technological"])
+        if pest_complete:
+            insights.append("Se realizó un análisis PEST completo del entorno macroeconómico.")
+
+        # Insights de estrategias
+        strategies = summary.get("strategies", {})
+        game_matrix = strategies.get("game_matrix", {})
+
+        if strategies.get("strategy_identification"):
+            insights.append("Se han identificado las estrategias corporativas principales.")
+
+        game_strategies = sum(len(game_matrix.get(key, [])) for key in ["growth_strategies", "avoid_strategies", "merge_strategies", "exit_strategies"])
+        if game_strategies > 0:
+            insights.append(f"Se definieron {game_strategies} estrategias específicas en la matriz GAME.")
+
+        if strategies.get("priority_strategies"):
+            insights.append("Se establecieron estrategias prioritarias con plan de implementación.")
+
+        return insights
+
+    @staticmethod
+    def _generate_recommendations(summary: Dict[str, Any]) -> List[str]:
+        """Generar recomendaciones basadas en los datos del resumen."""
+        recommendations = []
+
+        completion = summary.get("completion_status", {}).get("overall", {})
+        completion_pct = completion.get("percentage", 0)
+
+        if completion_pct < 30:
+            recommendations.append("Completar al menos el 50% de las secciones del plan estratégico para obtener insights significativos.")
+        elif completion_pct < 70:
+            recommendations.append("Continuar completando las secciones restantes para tener un plan estratégico integral.")
+
+        # Recomendaciones específicas por sección
+        identity = summary.get("company_identity", {})
+        if not identity.get("mission"):
+            recommendations.append("Definir la misión empresarial para establecer el propósito fundamental de la organización.")
+        if not identity.get("vision"):
+            recommendations.append("Establecer una visión clara del futuro deseado para la empresa.")
+        if not identity.get("general_objectives"):
+            recommendations.append("Desarrollar objetivos estratégicos detallados con metas específicas y medibles.")
+
+        # Recomendaciones de análisis estratégico
+        analysis = summary.get("strategic_analysis", {})
+        internal = analysis.get("internal_analysis", {})
+        external = analysis.get("external_analysis", {})
+
+        strengths = internal.get("strengths", [])
+        opportunities = external.get("opportunities", [])
+        weaknesses = internal.get("weaknesses", [])
+        threats = external.get("threats", [])
+
+        if strengths and opportunities:
+            recommendations.append("Desarrollar estrategias que aprovechen las fortalezas identificadas para capitalizar las oportunidades del mercado.")
+        if weaknesses and threats:
+            recommendations.append("Implementar planes de contingencia para mitigar las debilidades ante las amenazas identificadas.")
+
+        # Recomendaciones de herramientas
+        tools = summary.get("analysis_tools", {})
+        porter = tools.get("porter_five_forces", {})
+
+        if not all(porter.get(field) for field in ["competitive_rivalry", "supplier_power", "buyer_power"]):
+            recommendations.append("Completar el análisis de las fuerzas competitivas para entender mejor el posicionamiento en el mercado.")
+
+        # Recomendaciones de estrategias
+        strategies = summary.get("strategies", {})
+        if not strategies.get("priority_strategies"):
+            recommendations.append("Definir estrategias prioritarias con un cronograma de implementación realista.")
+
+        # Recomendación general
+        if completion_pct >= 80:
+            recommendations.append("El plan estratégico está casi completo. Revisar y validar todas las secciones antes de la implementación.")
+
+        return recommendations

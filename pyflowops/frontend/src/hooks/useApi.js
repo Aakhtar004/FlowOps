@@ -118,14 +118,25 @@ export const usePlan = (planId) => {
 
 // Hook para identidad de la empresa
 export const useCompanyIdentity = (planId) => {
+  console.log('useCompanyIdentity called with planId:', planId)
+  
   const queryClient = useQueryClient()
 
   const identityQuery = useQuery(
     ['companyIdentity', planId],
-    () => plansAPI.getCompanyIdentity(planId),
+    () => {
+      console.log('Fetching company identity for planId:', planId)
+      return plansAPI.getCompanyIdentity(planId)
+    },
     {
       enabled: !!planId,
       retry: false,
+      onSuccess: (data) => {
+        console.log('Company identity loaded successfully:', data)
+      },
+      onError: (error) => {
+        console.error('Error loading company identity:', error)
+      }
     }
   )
 
@@ -153,14 +164,25 @@ export const useCompanyIdentity = (planId) => {
 
 // Hook para análisis estratégico
 export const useStrategicAnalysis = (planId) => {
+  console.log('useStrategicAnalysis called with planId:', planId)
+  
   const queryClient = useQueryClient()
 
   const analysisQuery = useQuery(
     ['strategicAnalysis', planId],
-    () => plansAPI.getStrategicAnalysis(planId),
+    () => {
+      console.log('Fetching strategic analysis for planId:', planId)
+      return plansAPI.getStrategicAnalysis(planId)
+    },
     {
       enabled: !!planId,
       retry: false,
+      onSuccess: (data) => {
+        console.log('Strategic analysis loaded successfully:', data)
+      },
+      onError: (error) => {
+        console.error('Error loading strategic analysis:', error)
+      }
     }
   )
 
@@ -188,14 +210,25 @@ export const useStrategicAnalysis = (planId) => {
 
 // Hook para herramientas de análisis
 export const useAnalysisTools = (planId) => {
+  console.log('useAnalysisTools called with planId:', planId)
+  
   const queryClient = useQueryClient()
 
   const toolsQuery = useQuery(
     ['analysisTools', planId],
-    () => plansAPI.getAnalysisTools(planId),
+    () => {
+      console.log('Fetching analysis tools for planId:', planId)
+      return plansAPI.getAnalysisTools(planId)
+    },
     {
       enabled: !!planId,
       retry: false,
+      onSuccess: (data) => {
+        console.log('Analysis tools loaded successfully:', data)
+      },
+      onError: (error) => {
+        console.error('Error loading analysis tools:', error)
+      }
     }
   )
 
@@ -223,14 +256,25 @@ export const useAnalysisTools = (planId) => {
 
 // Hook para estrategias
 export const useStrategies = (planId) => {
+  console.log('useStrategies called with planId:', planId)
+  
   const queryClient = useQueryClient()
 
   const strategiesQuery = useQuery(
     ['strategies', planId],
-    () => plansAPI.getStrategies(planId),
+    () => {
+      console.log('Fetching strategies for planId:', planId)
+      return plansAPI.getStrategies(planId)
+    },
     {
       enabled: !!planId,
       retry: false,
+      onSuccess: (data) => {
+        console.log('Strategies loaded successfully:', data)
+      },
+      onError: (error) => {
+        console.error('Error loading strategies:', error)
+      }
     }
   )
 
@@ -258,12 +302,23 @@ export const useStrategies = (planId) => {
 
 // Hook para resumen ejecutivo
 export const useExecutiveSummary = (planId) => {
+  console.log('useExecutiveSummary called with planId:', planId)
+  
   return useQuery(
     ['executiveSummary', planId],
-    () => plansAPI.getExecutiveSummary(planId),
+    () => {
+      console.log('Fetching executive summary for planId:', planId)
+      return plansAPI.getExecutiveSummary(planId)
+    },
     {
       enabled: !!planId,
       refetchInterval: 30000, // Refrescar cada 30 segundos
+      onSuccess: (data) => {
+        console.log('Executive summary loaded successfully:', data)
+      },
+      onError: (error) => {
+        console.error('Error loading executive summary:', error)
+      }
     }
   )
 }

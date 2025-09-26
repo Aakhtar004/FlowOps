@@ -30,7 +30,7 @@ async def create_strategic_plan(
     """
     Crear un nuevo plan estratégico.
     """
-    plan = PlanService.create_strategic_plan(db, plan_data, current_user.id)
+    plan = PlanService.create_strategic_plan(db, plan_data, current_user.id)  # type: ignore
     return plan
 
 
@@ -44,7 +44,7 @@ async def get_strategic_plans(
     """
     Obtener todos los planes estratégicos del usuario actual.
     """
-    plans = PlanService.get_strategic_plans(db, current_user.id, skip, limit)
+    plans = PlanService.get_strategic_plans(db, current_user.id, skip, limit)  # type: ignore
     return plans
 
 
@@ -57,7 +57,7 @@ async def get_strategic_plan(
     """
     Obtener un plan estratégico específico.
     """
-    plan = PlanService.get_strategic_plan(db, plan_id, current_user.id)
+    plan = PlanService.get_strategic_plan(db, plan_id, current_user.id)  # type: ignore
     if not plan:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -76,7 +76,7 @@ async def update_strategic_plan(
     """
     Actualizar un plan estratégico.
     """
-    plan = PlanService.update_strategic_plan(db, plan_id, current_user.id, plan_data)
+    plan = PlanService.update_strategic_plan(db, plan_id, current_user.id, plan_data)  # type: ignore
     if not plan:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -94,7 +94,7 @@ async def delete_strategic_plan(
     """
     Eliminar un plan estratégico.
     """
-    deleted = PlanService.delete_strategic_plan(db, plan_id, current_user.id)
+    deleted = PlanService.delete_strategic_plan(db, plan_id, current_user.id)  # type: ignore
     if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -114,13 +114,22 @@ async def update_company_identity(
     """
     Crear o actualizar la identidad de la empresa.
     """
-    identity = PlanService.create_or_update_company_identity(db, plan_id, current_user.id, identity_data)
-    if not identity:
+    try:
+        identity = PlanService.create_or_update_company_identity(db, plan_id, current_user.id, identity_data)  # type: ignore
+        if not identity:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Plan estratégico no encontrado"
+            )
+        return identity
+    except Exception as e:
+        # Log the error for debugging
+        import logging
+        logging.error(f"Error updating company identity: {str(e)}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Plan estratégico no encontrado"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error interno del servidor: {str(e)}"
         )
-    return identity
 
 
 @router.get("/{plan_id}/company-identity", response_model=CompanyIdentity)
@@ -132,13 +141,31 @@ async def get_company_identity(
     """
     Obtener la identidad de la empresa.
     """
-    identity = PlanService.get_company_identity(db, plan_id, current_user.id)
+    identity = PlanService.get_company_identity(db, plan_id, current_user.id)  # type: ignore
     if not identity:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Identidad de la empresa no encontrada"
+        # Devolver objeto vacío en lugar de 404
+        from datetime import datetime
+        return CompanyIdentity(
+            id=0,
+            strategic_plan_id=plan_id,
+            mission=None,
+            vision=None,
+            values=[],
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
         )
-    return identity
+    # Convertir el objeto SQLAlchemy a dict y luego a modelo Pydantic para aplicar validadores
+    identity_dict = {
+        "id": identity.id,
+        "strategic_plan_id": identity.strategic_plan_id,
+        "mission": identity.mission,
+        "vision": identity.vision,
+        "values": identity.values,
+        "created_at": identity.created_at,
+        "updated_at": identity.updated_at
+    }
+    return CompanyIdentity(**identity_dict)
+
 
 
 # Endpoints para Análisis Estratégico
@@ -152,7 +179,7 @@ async def update_strategic_analysis(
     """
     Crear o actualizar el análisis estratégico.
     """
-    analysis = PlanService.create_or_update_strategic_analysis(db, plan_id, current_user.id, analysis_data)
+    analysis = PlanService.create_or_update_strategic_analysis(db, plan_id, current_user.id, analysis_data)  # type: ignore
     if not analysis:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -170,13 +197,34 @@ async def get_strategic_analysis(
     """
     Obtener el análisis estratégico.
     """
-    analysis = PlanService.get_strategic_analysis(db, plan_id, current_user.id)
+    analysis = PlanService.get_strategic_analysis(db, plan_id, current_user.id)  # type: ignore
     if not analysis:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Análisis estratégico no encontrado"
+        # Devolver objeto vacío en lugar de 404
+        from datetime import datetime
+        return StrategicAnalysis(
+            id=0,
+            strategic_plan_id=plan_id,
+            internal_strengths=[],
+            internal_weaknesses=[],
+            external_opportunities=[],
+            external_threats=[],
+            swot_summary=None,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
         )
-    return analysis
+    # Convertir el objeto SQLAlchemy a dict y luego a modelo Pydantic para aplicar validadores
+    analysis_dict = {
+        "id": analysis.id,
+        "strategic_plan_id": analysis.strategic_plan_id,
+        "internal_strengths": analysis.internal_strengths,
+        "internal_weaknesses": analysis.internal_weaknesses,
+        "external_opportunities": analysis.external_opportunities,
+        "external_threats": analysis.external_threats,
+        "swot_summary": analysis.swot_summary,
+        "created_at": analysis.created_at,
+        "updated_at": analysis.updated_at
+    }
+    return StrategicAnalysis(**analysis_dict)
 
 
 # Endpoints para Herramientas de Análisis
@@ -190,7 +238,7 @@ async def update_analysis_tools(
     """
     Crear o actualizar las herramientas de análisis.
     """
-    tools = PlanService.create_or_update_analysis_tools(db, plan_id, current_user.id, tools_data)
+    tools = PlanService.create_or_update_analysis_tools(db, plan_id, current_user.id, tools_data)  # type: ignore
     if not tools:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -208,13 +256,48 @@ async def get_analysis_tools(
     """
     Obtener las herramientas de análisis.
     """
-    tools = PlanService.get_analysis_tools(db, plan_id, current_user.id)
+    tools = PlanService.get_analysis_tools(db, plan_id, current_user.id)  # type: ignore
     if not tools:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Herramientas de análisis no encontradas"
+        # Devolver objeto vacío en lugar de 404
+        from datetime import datetime
+        return AnalysisTools(
+            id=0,
+            strategic_plan_id=plan_id,
+            value_chain_primary={},
+            value_chain_support={},
+            participation_matrix={},
+            porter_competitive_rivalry=None,
+            porter_supplier_power=None,
+            porter_buyer_power=None,
+            porter_threat_substitutes=None,
+            porter_threat_new_entrants=None,
+            pest_political=None,
+            pest_economic=None,
+            pest_social=None,
+            pest_technological=None,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
         )
-    return tools
+    # Convertir el objeto SQLAlchemy a dict y luego a modelo Pydantic para aplicar validadores
+    tools_dict = {
+        "id": tools.id,
+        "strategic_plan_id": tools.strategic_plan_id,
+        "value_chain_primary": tools.value_chain_primary,
+        "value_chain_support": tools.value_chain_support,
+        "participation_matrix": tools.participation_matrix,
+        "porter_competitive_rivalry": tools.porter_competitive_rivalry,
+        "porter_supplier_power": tools.porter_supplier_power,
+        "porter_buyer_power": tools.porter_buyer_power,
+        "porter_threat_substitutes": tools.porter_threat_substitutes,
+        "porter_threat_new_entrants": tools.porter_threat_new_entrants,
+        "pest_political": tools.pest_political,
+        "pest_economic": tools.pest_economic,
+        "pest_social": tools.pest_social,
+        "pest_technological": tools.pest_technological,
+        "created_at": tools.created_at,
+        "updated_at": tools.updated_at
+    }
+    return AnalysisTools(**tools_dict)
 
 
 # Endpoints para Estrategias
@@ -228,7 +311,7 @@ async def update_strategies(
     """
     Crear o actualizar las estrategias.
     """
-    strategies = PlanService.create_or_update_strategies(db, plan_id, current_user.id, strategies_data)
+    strategies = PlanService.create_or_update_strategies(db, plan_id, current_user.id, strategies_data)  # type: ignore
     if not strategies:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -246,13 +329,38 @@ async def get_strategies(
     """
     Obtener las estrategias.
     """
-    strategies = PlanService.get_strategies(db, plan_id, current_user.id)
+    strategies = PlanService.get_strategies(db, plan_id, current_user.id)  # type: ignore
     if not strategies:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Estrategias no encontradas"
+        # Devolver objeto vacío en lugar de 404
+        from datetime import datetime
+        return Strategies(
+            id=0,
+            strategic_plan_id=plan_id,
+            strategy_identification=[],
+            game_growth=[],
+            game_avoid=[],
+            game_merge=[],
+            game_exit=[],
+            priority_strategies=[],
+            implementation_timeline={},
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
         )
-    return strategies
+    # Convertir el objeto SQLAlchemy a dict y luego a modelo Pydantic para aplicar validadores
+    strategies_dict = {
+        "id": strategies.id,
+        "strategic_plan_id": strategies.strategic_plan_id,
+        "strategy_identification": strategies.strategy_identification,
+        "game_growth": strategies.game_growth,
+        "game_avoid": strategies.game_avoid,
+        "game_merge": strategies.game_merge,
+        "game_exit": strategies.game_exit,
+        "priority_strategies": strategies.priority_strategies,
+        "implementation_timeline": strategies.implementation_timeline,
+        "created_at": strategies.created_at,
+        "updated_at": strategies.updated_at
+    }
+    return Strategies(**strategies_dict)
 
 
 # Endpoint para Resumen Ejecutivo
@@ -265,7 +373,7 @@ async def get_executive_summary(
     """
     Generar y obtener el resumen ejecutivo del plan estratégico.
     """
-    summary = PlanService.generate_executive_summary(db, plan_id, current_user.id)
+    summary = PlanService.generate_executive_summary(db, plan_id, current_user.id)  # type: ignore
     if not summary:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -286,7 +394,28 @@ async def update_plan_identity(
     Actualizar la identidad empresarial con formato simplificado.
     """
     try:
-        # Simular guardado - en producción aquí iría la lógica real
+        # Convertir strings a listas si es necesario
+        values_list = [v.strip() for v in identity_data.values.split('\n') if v.strip()] if identity_data.values else None
+        
+        # Crear el objeto CompanyIdentityUpdate
+        update_data = CompanyIdentityUpdate(
+            mission=identity_data.mission,
+            vision=identity_data.vision,
+            values=values_list,
+            general_objectives=identity_data.general_objectives
+        )
+        
+        # Llamar al servicio real
+        result = PlanService.create_or_update_company_identity(
+            db, plan_id, current_user.id, update_data  # type: ignore
+        )
+        
+        if result is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Plan estratégico no encontrado"
+            )
+        
         return {"message": "Identidad empresarial actualizada correctamente"}
     except Exception as e:
         raise HTTPException(
