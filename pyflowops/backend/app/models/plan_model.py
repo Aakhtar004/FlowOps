@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.database import Base
@@ -9,7 +9,7 @@ class User(Base):
     Modelo de usuario para autenticación.
     """
     __tablename__ = "users"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), unique=True, index=True, nullable=False)
     email = Column(String(100), unique=True, index=True, nullable=False)
@@ -19,9 +19,11 @@ class User(Base):
     is_superuser = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
-    # Relación con planes estratégicos
-    strategic_plans = relationship("StrategicPlan", back_populates="owner")
+
+    # Relaciones
+    strategic_plans = relationship("StrategicPlan", back_populates="owner", lazy='select')
+    plan_users = relationship("PlanUser", back_populates="user", lazy='select')
+    notifications = relationship("Notification", back_populates="user", lazy='select')
 
 
 class StrategicPlan(Base):
@@ -30,21 +32,31 @@ class StrategicPlan(Base):
     Contenedor de todos los módulos del plan.
     """
     __tablename__ = "strategic_plans"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    # Información de la empresa
+    company_name = Column(String(200), nullable=True)
+    company_logo_url = Column(String(500), nullable=True)
+    promoters = Column(Text, nullable=True)  # Emprendedores / promotores
+    strategic_units = Column(Text, nullable=True)  # JSON string para unidades estratégicas
+    conclusions = Column(Text, nullable=True)  # Conclusiones del plan ejecutivo
+    
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
+
     # Relaciones
-    owner = relationship("User", back_populates="strategic_plans")
-    company_identity = relationship("CompanyIdentity", back_populates="strategic_plan", uselist=False)
-    strategic_analysis = relationship("StrategicAnalysis", back_populates="strategic_plan", uselist=False)
-    analysis_tools = relationship("AnalysisTools", back_populates="strategic_plan", uselist=False)
-    strategies = relationship("Strategies", back_populates="strategic_plan", uselist=False)
+    owner = relationship("User", back_populates="strategic_plans", lazy='select')
+    plan_users = relationship("PlanUser", back_populates="plan", lazy='select')
+    notifications = relationship("Notification", back_populates="related_plan", lazy='select')
+    company_identity = relationship("CompanyIdentity", back_populates="strategic_plan", uselist=False, lazy='select')
+    strategic_analysis = relationship("StrategicAnalysis", back_populates="strategic_plan", uselist=False, lazy='select')
+    analysis_tools = relationship("AnalysisTools", back_populates="strategic_plan", uselist=False, lazy='select')
+    strategies = relationship("Strategies", back_populates="strategic_plan", uselist=False, lazy='select')
 
 
 class CompanyIdentity(Base):
@@ -63,7 +75,8 @@ class CompanyIdentity(Base):
     
     # Campo para objetivos estratégicos detallados
     general_objectives = Column(Text, nullable=True)  # JSON string para objetivos generales con específicos
-    
+    strategic_mission = Column(Text, nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
@@ -127,6 +140,9 @@ class AnalysisTools(Base):
     pest_social = Column(Text, nullable=True)
     pest_technological = Column(Text, nullable=True)
     
+    # Matriz BCG (Boston Consulting Group)
+    bcg_matrix_data = Column(Text, nullable=True)  # JSON string para datos de matriz BCG
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
@@ -139,25 +155,71 @@ class Strategies(Base):
     Estrategias: Identificación de Estrategia, Matriz GAME.
     """
     __tablename__ = "strategies"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     strategic_plan_id = Column(Integer, ForeignKey("strategic_plans.id"), nullable=False)
-    
+
     # Identificación de estrategias
     strategy_identification = Column(Text, nullable=True)  # JSON string para múltiples estrategias
-    
+
     # Matriz GAME (Growth-Avoid-Merge-Exit)
     game_growth = Column(Text, nullable=True)  # JSON string para estrategias de crecimiento
     game_avoid = Column(Text, nullable=True)  # JSON string para estrategias de evitar
     game_merge = Column(Text, nullable=True)  # JSON string para estrategias de fusión
     game_exit = Column(Text, nullable=True)  # JSON string para estrategias de salida
-    
+
     # Estrategias prioritarias
     priority_strategies = Column(Text, nullable=True)  # JSON string
     implementation_timeline = Column(Text, nullable=True)  # JSON string
-    
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
+
     # Relación
     strategic_plan = relationship("StrategicPlan", back_populates="strategies")
+
+
+class PlanUser(Base):
+    """
+    Asociación muchos-a-muchos entre usuarios y planes estratégicos.
+    Gestiona permisos y estado de invitaciones.
+    """
+    __tablename__ = "plan_users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    plan_id = Column(Integer, ForeignKey("strategic_plans.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    role = Column(String(20), nullable=False)  # 'owner', 'member'
+    status = Column(String(20), nullable=False, default='pending')  # 'pending', 'accepted', 'rejected'
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relaciones
+    plan = relationship("StrategicPlan", back_populates="plan_users")
+    user = relationship("User", back_populates="plan_users")
+
+    __table_args__ = (
+        UniqueConstraint('plan_id', 'user_id', name='unique_plan_user'),
+    )
+
+
+class Notification(Base):
+    """
+    Notificaciones del sistema para usuarios.
+    """
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    type = Column(String(50), nullable=False)
+    message = Column(Text, nullable=False)
+    related_plan_id = Column(Integer, ForeignKey("strategic_plans.id"), nullable=True)
+    invitation_id = Column(Integer, ForeignKey("plan_users.id"), nullable=True)  # For invitation notifications
+    status = Column(String(20), nullable=False, default='unread')  # 'unread', 'read'
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relaciones
+    user = relationship("User", back_populates="notifications")
+    related_plan = relationship("StrategicPlan")
+    invitation = relationship("PlanUser")

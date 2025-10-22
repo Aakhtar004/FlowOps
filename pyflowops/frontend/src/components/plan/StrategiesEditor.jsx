@@ -12,7 +12,10 @@ const StrategiesEditor = ({ planId, onSave }) => {
   const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm({
     defaultValues: {
       strategies: '',
-      game_matrix: '',
+      game_growth: '',
+      game_avoid: '',
+      game_merge: '',
+      game_exit: '',
       implementation_timeline: '',
       success_indicators: ''
     }
@@ -21,12 +24,15 @@ const StrategiesEditor = ({ planId, onSave }) => {
   useEffect(() => {
     if (strategiesData) {
       console.log('Strategies data received:', strategiesData) // Debug log
-      
+
       // Los datos ya vienen como arrays gracias a los validadores de Pydantic
       const formData = {
         strategies: Array.isArray(strategiesData.strategy_identification) ? strategiesData.strategy_identification.join('\n') : (strategiesData.strategy_identification || ''),
-        game_matrix: Array.isArray(strategiesData.game_growth) ? strategiesData.game_growth.join('\n') : (strategiesData.game_growth || ''),
-        implementation_timeline: typeof strategiesData.implementation_timeline === 'object' ? JSON.stringify(strategiesData.implementation_timeline, null, 2) : (strategiesData.implementation_timeline || ''),
+        game_growth: Array.isArray(strategiesData.game_growth) ? strategiesData.game_growth.join('\n') : (strategiesData.game_growth || ''),
+        game_avoid: Array.isArray(strategiesData.game_avoid) ? strategiesData.game_avoid.join('\n') : (strategiesData.game_avoid || ''),
+        game_merge: Array.isArray(strategiesData.game_merge) ? strategiesData.game_merge.join('\n') : (strategiesData.game_merge || ''),
+        game_exit: Array.isArray(strategiesData.game_exit) ? strategiesData.game_exit.join('\n') : (strategiesData.game_exit || ''),
+        implementation_timeline: typeof strategiesData.implementation_timeline === 'object' && 'description' in strategiesData.implementation_timeline ? strategiesData.implementation_timeline.description : (typeof strategiesData.implementation_timeline === 'object' ? JSON.stringify(strategiesData.implementation_timeline, null, 2) : (strategiesData.implementation_timeline || '')),
         success_indicators: Array.isArray(strategiesData.priority_strategies) ? strategiesData.priority_strategies.join('\n') : (strategiesData.priority_strategies || '')
       }
       console.log('Strategies form data after processing:', formData) // Debug log
@@ -38,15 +44,39 @@ const StrategiesEditor = ({ planId, onSave }) => {
     setIsLoading(true)
     try {
       console.log('Submitting strategies data:', data) // Debug log
-      
-      // Convertir strings a arrays donde sea necesario
-      const processedData = {
-        strategy_identification: data.strategies ? data.strategies.split('\n').filter(s => s.trim()) : [],
-        game_growth: data.game_matrix ? data.game_matrix.split('\n').filter(g => g.trim()) : [],
-        implementation_timeline: data.implementation_timeline ? JSON.parse(data.implementation_timeline) : {},
-        priority_strategies: data.success_indicators ? data.success_indicators.split('\n').filter(p => p.trim()) : []
+
+      // Construir el objeto game_matrix
+      const gameMatrixData = {
+        growth: data.game_growth ? data.game_growth.split('\n').filter(s => s.trim()) : [],
+        avoid: data.game_avoid ? data.game_avoid.split('\n').filter(s => s.trim()) : [],
+        merge: data.game_merge ? data.game_merge.split('\n').filter(s => s.trim()) : [],
+        exit: data.game_exit ? data.game_exit.split('\n').filter(s => s.trim()) : []
       }
-      
+
+      // Helper function for safe JSON parsing
+      const safeJsonParse = (text) => {
+        if (!text || !text.trim().startsWith('{')) {
+          return {"description": text || ""};
+        }
+        try {
+          return JSON.parse(text);
+        } catch (e) {
+          console.warn('Invalid JSON, treating as description:', text);
+          return {"description": text};
+        }
+      };
+
+      // Enviar datos estructurados al endpoint completo
+      const processedData = {
+        strategy_identification: data.strategies ? data.strategies.split('\n').filter(s => s.trim()) : null,
+        game_growth: gameMatrixData.growth,
+        game_avoid: gameMatrixData.avoid,
+        game_merge: gameMatrixData.merge,
+        game_exit: gameMatrixData.exit,
+        priority_strategies: data.success_indicators ? data.success_indicators.split('\n').filter(s => s.trim()) : null,
+        implementation_timeline: data.implementation_timeline ? safeJsonParse(data.implementation_timeline) : null
+      }
+
       await updateStrategies(processedData)
       success('Estrategias guardadas correctamente')
       if (onSave) await onSave(processedData)
@@ -81,9 +111,8 @@ const StrategiesEditor = ({ planId, onSave }) => {
               </label>
             </div>
             <textarea
-              {...register('strategies', { 
-                required: 'Las estrategias son requeridas',
-                minLength: { value: 30, message: 'Describe al menos 30 caracteres' }
+              {...register('strategies', {
+                required: 'Las estrategias son requeridas'
               })}
               rows={5}
               className="input"
@@ -95,22 +124,62 @@ const StrategiesEditor = ({ planId, onSave }) => {
           </div>
 
           {/* Matriz GAME */}
-          <div>
+          <div className="space-y-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Matriz GAME (Growth, Advantage, Management, Environment)
+              Matriz GAME (Growth, Avoid, Merge, Exit)
             </label>
-            <textarea
-              {...register('game_matrix', { 
-                required: 'La matriz GAME es requerida',
-                minLength: { value: 50, message: 'Desarrolla más detalle (mínimo 50 caracteres)' }
-              })}
-              rows={6}
-              className="input"
-              placeholder="Analiza cada estrategia según los criterios GAME:&#10;&#10;Growth (Crecimiento): ...&#10;Advantage (Ventaja competitiva): ...&#10;Management (Gestión): ...&#10;Environment (Entorno): ..."
-            />
-            {errors.game_matrix && (
-              <p className="text-red-500 text-sm mt-1">{errors.game_matrix.message}</p>
-            )}
+
+            {/* Growth */}
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Growth (Crecimiento)
+              </label>
+              <textarea
+                {...register('game_growth')}
+                rows={3}
+                className="input"
+                placeholder="Estrategias de crecimiento: expansión de mercado, nuevos productos, etc."
+              />
+            </div>
+
+            {/* Avoid */}
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Avoid (Evitar)
+              </label>
+              <textarea
+                {...register('game_avoid')}
+                rows={3}
+                className="input"
+                placeholder="Estrategias para evitar riesgos: diversificación, reducción de exposición, etc."
+              />
+            </div>
+
+            {/* Merge */}
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Merge (Fusionar)
+              </label>
+              <textarea
+                {...register('game_merge')}
+                rows={3}
+                className="input"
+                placeholder="Estrategias de fusión o adquisición: alianzas estratégicas, joint ventures, etc."
+              />
+            </div>
+
+            {/* Exit */}
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Exit (Salida)
+              </label>
+              <textarea
+                {...register('game_exit')}
+                rows={3}
+                className="input"
+                placeholder="Estrategias de salida: venta de activos, liquidación, cambio de giro, etc."
+              />
+            </div>
           </div>
 
           {/* Timeline de Implementación */}
@@ -119,9 +188,8 @@ const StrategiesEditor = ({ planId, onSave }) => {
               Timeline de Implementación
             </label>
             <textarea
-              {...register('implementation_timeline', { 
-                required: 'El timeline es requerido',
-                minLength: { value: 30, message: 'Describe el timeline con más detalle' }
+              {...register('implementation_timeline', {
+                required: 'El timeline es requerido'
               })}
               rows={4}
               className="input"
@@ -138,9 +206,8 @@ const StrategiesEditor = ({ planId, onSave }) => {
               Indicadores de Éxito (KPIs)
             </label>
             <textarea
-              {...register('success_indicators', { 
-                required: 'Los indicadores son requeridos',
-                minLength: { value: 30, message: 'Define indicadores específicos y medibles' }
+              {...register('success_indicators', {
+                required: 'Los indicadores son requeridos'
               })}
               rows={4}
               className="input"

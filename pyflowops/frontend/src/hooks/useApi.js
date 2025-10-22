@@ -1,10 +1,25 @@
 import { useQuery, useMutation, useQueryClient } from 'react-query'
+import { useEffect, useState } from 'react'
 import { authAPI, plansAPI } from '../services/api'
 import toast from 'react-hot-toast'
 
 // Hook para autenticación
+const getSafeQueryClient = () => {
+  try {
+    return useQueryClient()
+  } catch (_) {
+    return {
+      setQueryData: () => {},
+      clear: () => {},
+      invalidateQueries: () => {},
+    }
+  }
+}
+
 export const useAuth = () => {
-  const queryClient = useQueryClient()
+  const queryClient = getSafeQueryClient()
+  // Estado para forzar re-render cuando cambie la autenticación
+  const [authVersion, setAuthVersion] = useState(0)
 
   const loginMutation = useMutation(authAPI.login, {
     onSuccess: (data) => {
@@ -12,6 +27,8 @@ export const useAuth = () => {
       localStorage.setItem('user', JSON.stringify(data.user))
       queryClient.setQueryData('user', data.user)
       toast.success('¡Bienvenido!')
+      // Fuerza re-render para que isAuthenticated se actualice inmediatamente
+      try { setAuthVersion(v => v + 1) } catch (_) {}
     },
     onError: (error) => {
       console.error('Error en login:', error)
@@ -29,10 +46,15 @@ export const useAuth = () => {
 
   const logoutMutation = useMutation(authAPI.logout, {
     onSuccess: () => {
+      console.log('DEBUG: Logout API call successful, clearing localStorage and queryClient')
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       queryClient.clear()
-      toast.success('Sesión cerrada exitosamente')
+      console.log('DEBUG: localStorage cleared, queryClient cleared')
+      // Navigation will be handled by the component
+    },
+    onError: (error) => {
+      console.error('DEBUG: Logout API call failed:', error)
     },
   })
 
@@ -42,6 +64,25 @@ export const useAuth = () => {
     staleTime: Infinity,
   })
 
+  // Reaccionar a eventos globales de pérdida de autenticación y cambios en localStorage
+  useEffect(() => {
+    const handleLogoutEvent = () => {
+      try { queryClient.clear() } catch (e) {}
+      setAuthVersion(v => v + 1)
+    }
+    const handleStorage = (e) => {
+      if (e.key === 'token') {
+        setAuthVersion(v => v + 1)
+      }
+    }
+    window.addEventListener('auth:logout', handleLogoutEvent)
+    window.addEventListener('storage', handleStorage)
+    return () => {
+      window.removeEventListener('auth:logout', handleLogoutEvent)
+      window.removeEventListener('storage', handleStorage)
+    }
+  }, [queryClient])
+
   const isAuthenticated = !!localStorage.getItem('token')
   const user = profileQuery.data || JSON.parse(localStorage.getItem('user') || 'null')
 
@@ -49,9 +90,10 @@ export const useAuth = () => {
     user,
     isAuthenticated,
     isLoading: profileQuery.isLoading,
-    login: loginMutation.mutate,
+    login: loginMutation.mutateAsync,
     register: registerMutation.mutate,
     logout: logoutMutation.mutate,
+    logoutAsync: logoutMutation.mutateAsync,
     isLoginLoading: loginMutation.isLoading,
     isRegisterLoading: registerMutation.isLoading,
   }
@@ -59,13 +101,15 @@ export const useAuth = () => {
 
 // Hook para planes estratégicos
 export const usePlans = () => {
-  const queryClient = useQueryClient()
+  const queryClient = getSafeQueryClient()
 
   const plansQuery = useQuery('plans', plansAPI.getAll)
 
   const createPlanMutation = useMutation(plansAPI.create, {
     onSuccess: () => {
       queryClient.invalidateQueries('plans')
+      queryClient.invalidateQueries('ownedPlans')
+      queryClient.invalidateQueries('sharedPlans')
       toast.success('Plan estratégico creado exitosamente')
     },
     onError: (error) => {
@@ -78,6 +122,8 @@ export const usePlans = () => {
     {
       onSuccess: () => {
         queryClient.invalidateQueries('plans')
+        queryClient.invalidateQueries('ownedPlans')
+        queryClient.invalidateQueries('sharedPlans')
         toast.success('Plan estratégico actualizado exitosamente')
       },
       onError: (error) => {
@@ -89,6 +135,8 @@ export const usePlans = () => {
   const deletePlanMutation = useMutation(plansAPI.delete, {
     onSuccess: () => {
       queryClient.invalidateQueries('plans')
+      queryClient.invalidateQueries('ownedPlans')
+      queryClient.invalidateQueries('sharedPlans')
       toast.success('Plan estratégico eliminado exitosamente')
     },
     onError: (error) => {
@@ -109,6 +157,45 @@ export const usePlans = () => {
   }
 }
 
+// Hook para planes propios
+export const useOwnedPlans = () => {
+  const queryClient = getSafeQueryClient()
+
+  const ownedPlansQuery = useQuery('ownedPlans', plansAPI.getOwnedPlans)
+
+  const deletePlanMutation = useMutation(plansAPI.delete, {
+    onSuccess: () => {
+      queryClient.invalidateQueries('ownedPlans')
+      queryClient.invalidateQueries('sharedPlans')
+      toast.success('Plan estratégico eliminado exitosamente')
+    },
+    onError: (error) => {
+      console.error('Error al eliminar plan:', error)
+    },
+  })
+
+  return {
+    plans: ownedPlansQuery.data || [],
+    isLoading: ownedPlansQuery.isLoading,
+    error: ownedPlansQuery.error,
+    deletePlan: deletePlanMutation.mutate,
+    isDeleting: deletePlanMutation.isLoading,
+  }
+}
+
+// Hook para planes compartidos
+export const useSharedPlans = () => {
+  const queryClient = getSafeQueryClient()
+
+  const sharedPlansQuery = useQuery('sharedPlans', plansAPI.getSharedPlans)
+
+  return {
+    plans: sharedPlansQuery.data || [],
+    isLoading: sharedPlansQuery.isLoading,
+    error: sharedPlansQuery.error,
+  }
+}
+
 // Hook para un plan específico
 export const usePlan = (planId) => {
   return useQuery(['plan', planId], () => plansAPI.getById(planId), {
@@ -120,7 +207,7 @@ export const usePlan = (planId) => {
 export const useCompanyIdentity = (planId) => {
   console.log('useCompanyIdentity called with planId:', planId)
   
-  const queryClient = useQueryClient()
+  const queryClient = getSafeQueryClient()
 
   const identityQuery = useQuery(
     ['companyIdentity', planId],
@@ -149,6 +236,7 @@ export const useCompanyIdentity = (planId) => {
       },
       onError: (error) => {
         console.error('Error al actualizar identidad:', error)
+        toast.error(error?.response?.data?.message || 'Error al actualizar identidad de la empresa')
       },
     }
   )
@@ -166,7 +254,7 @@ export const useCompanyIdentity = (planId) => {
 export const useStrategicAnalysis = (planId) => {
   console.log('useStrategicAnalysis called with planId:', planId)
   
-  const queryClient = useQueryClient()
+  const queryClient = getSafeQueryClient()
 
   const analysisQuery = useQuery(
     ['strategicAnalysis', planId],
@@ -195,6 +283,7 @@ export const useStrategicAnalysis = (planId) => {
       },
       onError: (error) => {
         console.error('Error al actualizar análisis:', error)
+        toast.error(error?.response?.data?.message || 'Error al actualizar análisis estratégico')
       },
     }
   )
@@ -241,6 +330,7 @@ export const useAnalysisTools = (planId) => {
       },
       onError: (error) => {
         console.error('Error al actualizar herramientas:', error)
+        toast.error(error?.response?.data?.message || 'Error al actualizar herramientas de análisis')
       },
     }
   )
@@ -287,6 +377,7 @@ export const useStrategies = (planId) => {
       },
       onError: (error) => {
         console.error('Error al actualizar estrategias:', error)
+        toast.error(error?.response?.data?.message || 'Error al actualizar estrategias')
       },
     }
   )
@@ -300,10 +391,37 @@ export const useStrategies = (planId) => {
   }
 }
 
+// Hook para notificaciones
+export const useNotifications = () => {
+  const queryClient = useQueryClient()
+
+  const notificationsQuery = useQuery('notifications', plansAPI.getNotifications)
+
+  const markReadMutation = useMutation(
+    (notificationId) => plansAPI.markNotificationRead(notificationId),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries('notifications')
+      },
+      onError: (error) => {
+        console.error('Error marking notification as read:', error)
+      },
+    }
+  )
+
+  return {
+    notifications: notificationsQuery.data || [],
+    isLoading: notificationsQuery.isLoading,
+    error: notificationsQuery.error,
+    markAsRead: markReadMutation.mutate,
+    unreadCount: (notificationsQuery.data || []).filter(n => n.status === 'unread').length,
+  }
+}
+
 // Hook para resumen ejecutivo
 export const useExecutiveSummary = (planId) => {
   console.log('useExecutiveSummary called with planId:', planId)
-  
+
   return useQuery(
     ['executiveSummary', planId],
     () => {
@@ -321,4 +439,59 @@ export const useExecutiveSummary = (planId) => {
       }
     }
   )
+}
+
+// Hook para gestión de usuarios del plan
+export const usePlanUsers = (planId) => {
+  const queryClient = useQueryClient()
+
+  const usersQuery = useQuery(
+    ['planUsers', planId],
+    () => plansAPI.getPlanUsers(planId),
+    {
+      enabled: !!planId,
+      retry: false,
+      onError: (error) => {
+        console.error('Error loading plan users:', error)
+      }
+    }
+  )
+
+  const inviteUserMutation = useMutation(
+    (email) => plansAPI.inviteUser(planId, email),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['planUsers', planId])
+        toast.success('Invitación enviada correctamente')
+      },
+      onError: (error) => {
+        console.error('Error inviting user:', error)
+        toast.error(error?.response?.data?.detail || 'Error al enviar invitación')
+      },
+    }
+  )
+
+  const removeUserMutation = useMutation(
+    (userId) => plansAPI.removeUserFromPlan(planId, userId),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['planUsers', planId])
+        toast.success('Usuario removido del plan correctamente')
+      },
+      onError: (error) => {
+        console.error('Error removing user:', error)
+        toast.error(error?.response?.data?.detail || 'Error al remover usuario')
+      },
+    }
+  )
+
+  return {
+    users: usersQuery.data || [],
+    isLoading: usersQuery.isLoading,
+    error: usersQuery.error,
+    inviteUser: inviteUserMutation.mutate,
+    removeUser: removeUserMutation.mutate,
+    isInviting: inviteUserMutation.isLoading,
+    isRemoving: removeUserMutation.isLoading,
+  }
 }

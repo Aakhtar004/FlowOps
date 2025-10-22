@@ -3,8 +3,8 @@ import toast from 'react-hot-toast'
 
 // Configuración base de Axios
 const api = axios.create({
-  baseURL: '/api',
-  timeout: 10000,
+  baseURL: `${import.meta.env.VITE_API_URL}`,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -36,7 +36,16 @@ api.interceptors.response.use(
       // Token expirado o inválido
       localStorage.removeItem('token')
       localStorage.removeItem('user')
-      window.location.href = '/login'
+      // Notificar globalmente al frontend que se perdió la autenticación
+      try {
+        window.dispatchEvent(new Event('auth:logout'))
+      } catch (e) {
+        // Ignorar si el entorno no soporta eventos
+      }
+      // Evitar navegación real durante pruebas (JSDOM no implementa navigation)
+      if (!import.meta.env?.VITEST) {
+        window.location.href = '/login'
+      }
       toast.error('Sesión expirada. Por favor, inicie sesión nuevamente.')
     } else if (response?.status === 403) {
       toast.error('No tienes permisos para realizar esta acción.')
@@ -57,12 +66,19 @@ api.interceptors.response.use(
 // Funciones de autenticación
 export const authAPI = {
   register: async (userData) => {
-    const response = await api.post('/v1/auth/register', userData)
+    const response = await api.post('/api/v1/auth/register', userData)
     return response.data
   },
 
   login: async (credentials) => {
-    const response = await api.post('/v1/auth/login', credentials, {
+    // El backend espera OAuth2PasswordRequestForm: x-www-form-urlencoded
+    const params = new URLSearchParams()
+    if (credentials && typeof credentials === 'object') {
+      if (credentials.username != null) params.append('username', String(credentials.username))
+      if (credentials.password != null) params.append('password', String(credentials.password))
+      // Opcional: scope, client_id, client_secret si existieran
+    }
+    const response = await api.post('/api/v1/auth/login', params, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
@@ -71,12 +87,14 @@ export const authAPI = {
   },
 
   logout: async () => {
-    const response = await api.post('/v1/auth/logout')
+    console.log('DEBUG: Making logout API call to /v1/auth/logout')
+    const response = await api.post('/api/v1/auth/logout')
+    console.log('DEBUG: Logout API call completed, response:', response.data)
     return response.data
   },
 
   getProfile: async () => {
-    const response = await api.get('/v1/auth/me')
+    const response = await api.get('/api/v1/auth/me')
     return response.data
   },
 }
@@ -84,17 +102,17 @@ export const authAPI = {
 // Funciones para planes estratégicos
 export const plansAPI = {
   getAll: async () => {
-    const response = await api.get('/v1/plans/')
+    const response = await api.get('/api/v1/plans/')
     return response.data
   },
 
   getById: async (planId) => {
-    const response = await api.get(`/v1/plans/${planId}`)
+    const response = await api.get(`/api/v1/plans/${planId}`)
     return response.data
   },
 
   create: async (planData) => {
-    const response = await api.post('/v1/plans/', planData)
+    const response = await api.post('/api/v1/plans/', planData)
     return response.data
   },
 
@@ -104,57 +122,128 @@ export const plansAPI = {
   },
 
   delete: async (planId) => {
-    const response = await api.delete(`/v1/plans/${planId}`)
+    const response = await api.delete(`/api/v1/plans/${planId}`)
     return response.data
   },
 
   // Identidad de la empresa
   getCompanyIdentity: async (planId) => {
-    const response = await api.get(`/v1/plans/${planId}/company-identity`)
+    const response = await api.get(`/api/v1/plans/${planId}/company-identity`)
     return response.data
   },
 
   updateCompanyIdentity: async (planId, identityData) => {
-    const response = await api.put(`/v1/plans/${planId}/company-identity`, identityData)
+    console.log('DEBUG: Sending updateCompanyIdentity request with data:', identityData)
+    const response = await api.put(`/api/v1/plans/${planId}/company-identity`, identityData)
+    console.log('DEBUG: updateCompanyIdentity response:', response.data)
     return response.data
   },
 
   // Análisis estratégico
   getStrategicAnalysis: async (planId) => {
-    const response = await api.get(`/v1/plans/${planId}/strategic-analysis`)
+    const response = await api.get(`/api/v1/plans/${planId}/strategic-analysis`)
     return response.data
   },
 
   updateStrategicAnalysis: async (planId, analysisData) => {
-    const response = await api.put(`/v1/plans/${planId}/strategic-analysis`, analysisData)
+    const response = await api.put(`/api/v1/plans/${planId}/strategic-analysis`, analysisData)
     return response.data
   },
 
   // Herramientas de análisis
   getAnalysisTools: async (planId) => {
-    const response = await api.get(`/v1/plans/${planId}/analysis-tools`)
+    const response = await api.get(`/api/v1/plans/${planId}/analysis-tools`)
     return response.data
   },
 
   updateAnalysisTools: async (planId, toolsData) => {
-    const response = await api.put(`/v1/plans/${planId}/analysis-tools`, toolsData)
+    const response = await api.put(`/api/v1/plans/${planId}/analysis-tools`, toolsData)
     return response.data
   },
 
   // Estrategias
   getStrategies: async (planId) => {
-    const response = await api.get(`/v1/plans/${planId}/strategies`)
+    const response = await api.get(`/api/v1/plans/${planId}/strategies`)
     return response.data
   },
 
   updateStrategies: async (planId, strategiesData) => {
-    const response = await api.put(`/v1/plans/${planId}/strategies`, strategiesData)
+    const response = await api.put(`/api/v1/plans/${planId}/strategies`, strategiesData)
+    return response.data
+  },
+
+  // Endpoints simplificados
+  updateIdentitySimple: async (planId, identityData) => {
+    const response = await api.put(`/api/v1/plans/${planId}/identity`, identityData)
+    return response.data
+  },
+
+  updateSwotSimple: async (planId, swotData) => {
+    const response = await api.put(`/api/v1/plans/${planId}/swot`, swotData)
+    return response.data
+  },
+
+  updateToolsSimple: async (planId, toolsData) => {
+    const response = await api.put(`/api/v1/plans/${planId}/tools`, toolsData)
+    return response.data
+  },
+
+  updateStrategiesSimple: async (planId, strategiesData) => {
+    const response = await api.put(`/api/v1/plans/${planId}/strategies-simple`, strategiesData)
     return response.data
   },
 
   // Resumen ejecutivo
   getExecutiveSummary: async (planId) => {
-    const response = await api.get(`/v1/plans/${planId}/executive-summary`)
+    const response = await api.get(`/api/v1/plans/${planId}/executive-summary`)
+    return response.data
+  },
+
+  // Funciones para compartir planes
+  inviteUser: async (planId, email) => {
+    const response = await api.post(`/api/v1/plans/${planId}/invite`, { email })
+    return response.data
+  },
+
+  acceptInvitation: async (planId, invitationId) => {
+    const response = await api.post(`/api/v1/plans/${planId}/invitations/${invitationId}/accept`)
+    return response.data
+  },
+
+  rejectInvitation: async (planId, invitationId) => {
+    const response = await api.post(`/api/v1/plans/${planId}/invitations/${invitationId}/reject`)
+    return response.data
+  },
+
+  getPlanUsers: async (planId) => {
+    const response = await api.get(`/api/v1/plans/${planId}/users`)
+    return response.data
+  },
+
+  removeUserFromPlan: async (planId, userId) => {
+    const response = await api.delete(`/api/v1/plans/${planId}/users/${userId}`)
+    return response.data
+  },
+
+  // Notificaciones
+  getNotifications: async () => {
+    const response = await api.get('/api/v1/plans/notifications')
+    return response.data
+  },
+
+  markNotificationRead: async (notificationId) => {
+    const response = await api.put(`/api/v1/plans/notifications/${notificationId}/read`)
+    return response.data
+  },
+
+  // Planes separados
+  getOwnedPlans: async () => {
+    const response = await api.get('/api/v1/plans/owned')
+    return response.data
+  },
+
+  getSharedPlans: async () => {
+    const response = await api.get('/api/v1/plans/shared')
     return response.data
   },
 }

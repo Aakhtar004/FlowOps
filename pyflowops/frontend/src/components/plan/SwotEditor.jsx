@@ -82,9 +82,8 @@ const SwotEditor = ({ planId, onSave }) => {
                 </label>
               </div>
               <textarea
-                {...register('strengths', { 
-                  required: 'Las fortalezas son requeridas',
-                  minLength: { value: 20, message: 'Describe al menos 20 caracteres' }
+                {...register('strengths', {
+                  required: 'Las fortalezas son requeridas'
                 })}
                 rows={4}
                 className="input"
@@ -104,9 +103,8 @@ const SwotEditor = ({ planId, onSave }) => {
                 </label>
               </div>
               <textarea
-                {...register('weaknesses', { 
-                  required: 'Las debilidades son requeridas',
-                  minLength: { value: 20, message: 'Describe al menos 20 caracteres' }
+                {...register('weaknesses', {
+                  required: 'Las debilidades son requeridas'
                 })}
                 rows={4}
                 className="input"
@@ -126,9 +124,8 @@ const SwotEditor = ({ planId, onSave }) => {
                 </label>
               </div>
               <textarea
-                {...register('opportunities', { 
-                  required: 'Las oportunidades son requeridas',
-                  minLength: { value: 20, message: 'Describe al menos 20 caracteres' }
+                {...register('opportunities', {
+                  required: 'Las oportunidades son requeridas'
                 })}
                 rows={4}
                 className="input"
@@ -148,9 +145,8 @@ const SwotEditor = ({ planId, onSave }) => {
                 </label>
               </div>
               <textarea
-                {...register('threats', { 
-                  required: 'Las amenazas son requeridas',
-                  minLength: { value: 20, message: 'Describe al menos 20 caracteres' }
+                {...register('threats', {
+                  required: 'Las amenazas son requeridas'
                 })}
                 rows={4}
                 className="input"

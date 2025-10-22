@@ -1,6 +1,9 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import { useAuth } from './hooks/useApi'
 import { ToastProvider } from './components/ui/Toast'
+import { ApolloProvider } from '@apollo/client'
+import { getApolloClient } from './graphql/client'
 import Header from './components/common/Header'
 import AuthPage from './pages/AuthPage'
 import Dashboard from './pages/Dashboard'
@@ -8,8 +11,15 @@ import PlanEditor from './pages/PlanEditor'
 import ResumenPage from './pages/ResumenPage'
 import LoadingSpinner from './components/common/LoadingSpinner'
 
-function App() {
+function AppContent() {
   const { isAuthenticated, isLoading, user } = useAuth()
+  const [apolloVersion, setApolloVersion] = useState(0)
+
+  useEffect(() => {
+    const onReset = () => setApolloVersion(v => v + 1)
+    window.addEventListener('apollo:reset', onReset)
+    return () => window.removeEventListener('apollo:reset', onReset)
+  }, [])
 
   if (isLoading) {
     return (
@@ -20,11 +30,20 @@ function App() {
   }
 
   return (
-    <ToastProvider>
-      <div className="min-h-screen bg-gray-50">
-        {isAuthenticated && <Header user={user} />}
-        
-        <main className={isAuthenticated ? 'pt-16' : ''}>
+    <ApolloProvider key={apolloVersion} client={getApolloClient()}>
+      <ToastProvider>
+        <AppInner isAuthenticated={isAuthenticated} user={user} />
+      </ToastProvider>
+    </ApolloProvider>
+  )
+}
+
+function AppInner({ isAuthenticated, user }) {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {isAuthenticated && <Header user={user} />}
+      
+      <main className={isAuthenticated ? 'pt-16' : ''}>
           <Routes>
             {/* Rutas públicas */}
             <Route 
@@ -61,6 +80,16 @@ function App() {
             />
             <Route
               path="/plan/:planId"
+              element={
+                isAuthenticated ? (
+                  <PlanEditor />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/plan/:planId/informacion-empresa"
               element={
                 isAuthenticated ? (
                   <PlanEditor />
@@ -110,7 +139,27 @@ function App() {
               }
             />
             <Route
+              path="/plan/:planId/bcg-matrix"
+              element={
+                isAuthenticated ? (
+                  <PlanEditor />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
               path="/plan/:planId/estrategias"
+              element={
+                isAuthenticated ? (
+                  <PlanEditor />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/plan/:planId/usuarios"
               element={
                 isAuthenticated ? (
                   <PlanEditor />
@@ -159,6 +208,11 @@ function App() {
           </Routes>
         </main>
       </div>
-    </ToastProvider>
   )
-}export default App
+}
+
+function App() {
+  return <AppContent />
+}
+
+export default App

@@ -1,23 +1,30 @@
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
-import { X } from 'lucide-react'
+import { X, Plus, Minus } from 'lucide-react'
 import { usePlans } from '../../hooks/useApi'
+import { plansAPI } from '../../services/api'
 import LoadingSpinner from '../common/LoadingSpinner'
 
 const schema = yup.object({
   title: yup
     .string()
     .required('El título es requerido')
-    .min(3, 'El título debe tener al menos 3 caracteres')
     .max(200, 'El título no puede exceder 200 caracteres'),
   description: yup
     .string()
     .max(500, 'La descripción no puede exceder 500 caracteres'),
+  inviteEmails: yup
+    .array()
+    .of(yup.string().email('Email inválido'))
+    .max(6, 'Máximo 6 usuarios invitados'),
 })
 
 const CreatePlanModal = ({ isOpen, onClose, onPlanCreated }) => {
   const { createPlan, isCreating } = usePlans()
+  const [inviteEmails, setInviteEmails] = useState([''])
+  const [submissionError, setSubmissionError] = useState(null)
 
   const {
     register,
@@ -28,18 +35,60 @@ const CreatePlanModal = ({ isOpen, onClose, onPlanCreated }) => {
     resolver: yupResolver(schema),
   })
 
+  const addEmailField = () => {
+    if (inviteEmails.length < 6) {
+      setInviteEmails([...inviteEmails, ''])
+    }
+  }
+
+  const removeEmailField = (index) => {
+    if (inviteEmails.length > 1) {
+      const newEmails = inviteEmails.filter((_, i) => i !== index)
+      setInviteEmails(newEmails)
+    }
+  }
+
+  const updateEmail = (index, value) => {
+    const newEmails = [...inviteEmails]
+    newEmails[index] = value
+    setInviteEmails(newEmails)
+  }
+
   const onSubmit = async (data) => {
     try {
-      await createPlan(data)
+      // Crear el plan
+      const plan = await createPlan({
+        title: data.title,
+        description: data.description,
+      })
+
+      // Invitar usuarios si hay emails válidos
+      const validEmails = inviteEmails.filter(email => email.trim() && email.includes('@'))
+      if (validEmails.length > 0 && plan?.id) {
+        for (const email of validEmails) {
+          try {
+            await plansAPI.inviteUser(plan.id, email.trim())
+          } catch (inviteError) {
+            console.error(`Error invitando a ${email}:`, inviteError)
+            // No fallar el proceso completo por un error de invitación
+          }
+        }
+      }
+
       reset()
+      setInviteEmails([''])
+      setSubmissionError(null)
       onPlanCreated?.()
     } catch (error) {
       console.error('Error al crear plan:', error)
+      setSubmissionError('Error al crear el plan. Por favor, inténtalo de nuevo.')
     }
   }
 
   const handleClose = () => {
     reset()
+    setInviteEmails([''])
+    setSubmissionError(null)
     onClose()
   }
 
@@ -104,6 +153,57 @@ const CreatePlanModal = ({ isOpen, onClose, onPlanCreated }) => {
                   <p className="form-error">{errors.description.message}</p>
                 )}
               </div>
+
+              {/* Error de envío */}
+              {submissionError && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                  <p className="text-red-600 text-sm">{submissionError}</p>
+                </div>
+              )}
+
+              {/* Invitar usuarios (Opcional) */}
+              {true && (
+              <div>
+                <label className="form-label">
+                  Invitar Usuarios (Opcional)
+                </label>
+                <p className="text-sm text-gray-500 mb-2">
+                  Agrega emails de usuarios registrados para compartir este plan (máximo 6).
+                </p>
+                <div className="space-y-2">
+                  {inviteEmails.map((email, index) => (
+                    <div key={index} className="flex items-center space-x-2">
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => updateEmail(index, e.target.value)}
+                        className="input flex-1"
+                        placeholder="usuario@email.com"
+                      />
+                      {inviteEmails.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeEmailField(index)}
+                          className="text-red-500 hover:text-red-700 p-2"
+                        >
+                          <Minus className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {inviteEmails.length < 6 && (
+                  <button
+                    type="button"
+                    onClick={addEmailField}
+                    className="mt-2 flex items-center space-x-1 text-primary-600 hover:text-primary-800 text-sm"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Agregar otro email</span>
+                  </button>
+                )}
+              </div>
+              )}
 
               <div className="text-sm text-gray-500">
                 <p>

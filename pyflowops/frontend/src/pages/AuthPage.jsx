@@ -253,17 +253,17 @@ const AuthPage = ({ mode = 'login' }) => {
           <div className="text-center">
             {isLogin ? (
               <p className="text-sm text-gray-600">
-                ¿No tienes una cuenta?{' '}
+                ¿No tienes cuenta?{' '}
                 <Link
                   to="/register"
                   className="font-medium text-primary-600 hover:text-primary-500"
                 >
-                  Regístrate aquí
+                  Regístrate
                 </Link>
               </p>
             ) : (
               <p className="text-sm text-gray-600">
-                ¿Ya tienes una cuenta?{' '}
+                ¿Ya tienes cuenta?{' '}
                 <Link
                   to="/login"
                   className="font-medium text-primary-600 hover:text-primary-500"

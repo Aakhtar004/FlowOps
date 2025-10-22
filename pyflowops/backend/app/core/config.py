@@ -18,13 +18,27 @@ class Settings(BaseSettings):
     # Configuración de la base de datos
     DATABASE_URL: str = "postgresql://admin:admin123@localhost:5432/pyflowops"
     
+    # Configuración del pool de base de datos para producción
+    DATABASE_POOL_SIZE: int = 30
+    DATABASE_MAX_OVERFLOW: int = 50
+    DATABASE_POOL_TIMEOUT: int = 120
+    DATABASE_POOL_RECYCLE: int = 3600
+    
     # Configuración de seguridad
-    SECRET_KEY: str = "dev-secret-key-change-in-production-environment"
+    SECRET_KEY: str = "58e3d823c81bcf8b4e2897a72c24344a"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    
+    # Configuración de WebSocket para producción
+    WEBSOCKET_MAX_CONNECTIONS_PER_USER: int = 3
+    WEBSOCKET_CONNECTION_TIMEOUT: int = 1800
+    WEBSOCKET_RATE_LIMIT_PER_MINUTE: int = 60
     
     # Configuración de CORS
-    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173"
+    CORS_ORIGINS: str = "http://frontend:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173,http://localhost:3000,https://j7j1tg9h-3000.brs.devtunnels.ms"
+
+    # Usuarios iniciales de seeding (formato: "user:email:pass[:full][:is_superuser];...")
+    INITIAL_USERS: str = ""
     
     @field_validator('CORS_ORIGINS')
     @classmethod

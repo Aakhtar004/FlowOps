@@ -46,14 +46,20 @@ const IdentityEditor = ({ planId, onSave }) => {
       setValue('values', values)
 
       // Cargar objetivos estratégicos si existen
-      if (identityData.general_objectives && Array.isArray(identityData.general_objectives)) {
-        setGeneralObjectives(identityData.general_objectives.map((obj, index) => ({
+      console.log('DEBUG: Loading objectives from identityData:', identityData.general_objectives)
+      if (identityData.general_objectives && Array.isArray(identityData.general_objectives) && identityData.general_objectives.length > 0) {
+        const loadedObjectives = identityData.general_objectives.map((obj, index) => ({
           id: index + 1,
           text: obj.text || '',
           specificObjectives: obj.specific_objectives && Array.isArray(obj.specific_objectives)
             ? obj.specific_objectives.map((spec, specIndex) => ({ id: specIndex + 1, text: spec.text || '' }))
             : [{ id: 1, text: '' }, { id: 2, text: '' }]
-        })))
+        }))
+        console.log('DEBUG: Setting general objectives:', loadedObjectives)
+        setGeneralObjectives(loadedObjectives)
+      } else {
+        console.log('DEBUG: No objectives found or empty array, keeping default objectives')
+        // Keep the default objectives so user can fill them
       }
 
       setFormInitialized(true)
@@ -113,15 +119,18 @@ const IdentityEditor = ({ planId, onSave }) => {
       console.log('Submitting identity data:', data) // Debug log
 
       // Convertir strings a arrays donde sea necesario
+      const filteredObjectives = generalObjectives.filter(obj => obj.text.trim() !== '').map(obj => ({
+        text: obj.text,
+        specific_objectives: obj.specificObjectives.filter(spec => spec.text.trim() !== '').map(spec => ({ text: spec.text }))
+      }))
+
       const processedData = {
         ...data,
         values: data.values ? data.values.split('\n').filter(v => v.trim()) : [],
-        general_objectives: generalObjectives.map(obj => ({
-          text: obj.text,
-          specific_objectives: obj.specificObjectives.map(spec => ({ text: spec.text }))
-        }))
+        general_objectives: filteredObjectives
       }
 
+      console.log('DEBUG: Processed objectives data:', processedData.general_objectives)
       await updateIdentity(processedData)
       success('Identidad empresarial guardada correctamente')
       if (onSave) await onSave(processedData)
@@ -168,13 +177,13 @@ const IdentityEditor = ({ planId, onSave }) => {
 
             {/* Misión */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="mission" className="block text-sm font-medium text-gray-700 mb-2">
                 Misión
               </label>
               <textarea
+                id="mission"
                 {...register('mission', {
-                  required: 'La misión es requerida',
-                  minLength: { value: 20, message: 'La misión debe tener al menos 20 caracteres' }
+                  required: 'La misión es requerida'
                 })}
                 rows={3}
                 className="input"
@@ -187,13 +196,13 @@ const IdentityEditor = ({ planId, onSave }) => {
 
             {/* Visión */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="vision" className="block text-sm font-medium text-gray-700 mb-2">
                 Visión
               </label>
               <textarea
+                id="vision"
                 {...register('vision', {
-                  required: 'La visión es requerida',
-                  minLength: { value: 20, message: 'La visión debe tener al menos 20 caracteres' }
+                  required: 'La visión es requerida'
                 })}
                 rows={3}
                 className="input"
@@ -206,13 +215,13 @@ const IdentityEditor = ({ planId, onSave }) => {
 
             {/* Valores */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="values" className="block text-sm font-medium text-gray-700 mb-2">
                 Valores
               </label>
               <textarea
+                id="values"
                 {...register('values', {
-                  required: 'Los valores son requeridos',
-                  minLength: { value: 20, message: 'Los valores deben tener al menos 20 caracteres' }
+                  required: 'Los valores son requeridos'
                 })}
                 rows={4}
                 className="input"

@@ -1,6 +1,6 @@
 from typing import Optional, List, Dict, Any, Union
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, validator
+from pydantic import BaseModel, EmailStr, ConfigDict, validator
 import json
 
 
@@ -11,6 +11,12 @@ class UserBase(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
     is_active: bool = True
+
+
+# Tipos tolerantes para roles y estados en REST (str)
+
+
+# Tipo tolerante para estado de notificaciones en REST (str)
 
 
 class UserCreate(UserBase):
@@ -37,8 +43,7 @@ class User(UserBase):
     created_at: datetime
     updated_at: Optional[datetime]
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class Token(BaseModel):
@@ -53,7 +58,21 @@ class StrategicPlanBase(BaseModel):
     """Esquema base para plan estratégico."""
     title: str
     description: Optional[str] = None
+    company_name: Optional[str] = None
+    company_logo_url: Optional[str] = None
+    promoters: Optional[str] = None
+    strategic_units: Optional[List[str]] = None
+    conclusions: Optional[str] = None
     is_active: bool = True
+
+    @validator('strategic_units', pre=True, always=True)
+    def parse_strategic_units(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except:
+                return []
+        return v or []
 
 
 class StrategicPlanCreate(StrategicPlanBase):
@@ -65,6 +84,11 @@ class StrategicPlanUpdate(BaseModel):
     """Esquema para actualizar plan estratégico."""
     title: Optional[str] = None
     description: Optional[str] = None
+    company_name: Optional[str] = None
+    company_logo_url: Optional[str] = None
+    promoters: Optional[str] = None
+    strategic_units: Optional[List[str]] = None
+    conclusions: Optional[str] = None
     is_active: Optional[bool] = None
 
 
@@ -72,11 +96,17 @@ class StrategicPlan(StrategicPlanBase):
     """Esquema para respuesta de plan estratégico."""
     id: int
     owner_id: int
+    company_name: Optional[str] = None
+    company_logo_url: Optional[str] = None
+    promoters: Optional[str] = None
+    strategic_units: Optional[List[str]] = None
+    conclusions: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime]
-    
-    class Config:
-        from_attributes = True
+    progress_percentage: float = 0.0
+    status: str = "In development"
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Esquemas para objetivos estratégicos
@@ -98,6 +128,7 @@ class CompanyIdentityBase(BaseModel):
     vision: Optional[str] = None
     values: Optional[List[str]] = None
     general_objectives: Optional[List[GeneralObjective]] = None
+    strategic_mission: Optional[str] = None
 
     @validator('values', pre=True, always=True)
     def parse_values(cls, v):
@@ -129,6 +160,7 @@ class CompanyIdentityUpdate(BaseModel):
     vision: Optional[str] = None
     values: Optional[List[str]] = None
     general_objectives: Optional[List[GeneralObjective]] = None
+    strategic_mission: Optional[str] = None
 
 
 class CompanyIdentity(CompanyIdentityBase):
@@ -138,8 +170,7 @@ class CompanyIdentity(CompanyIdentityBase):
     created_at: datetime
     updated_at: Optional[datetime]
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Esquemas para Análisis Estratégico
@@ -209,8 +240,7 @@ class StrategicAnalysis(StrategicAnalysisBase):
     created_at: datetime
     updated_at: Optional[datetime]
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Esquemas para Herramientas de Análisis
@@ -235,6 +265,9 @@ class AnalysisToolsBase(BaseModel):
     pest_economic: Optional[str] = None
     pest_social: Optional[str] = None
     pest_technological: Optional[str] = None
+    
+    # Matriz BCG (Boston Consulting Group)
+    bcg_matrix_data: Optional[Dict[str, Any]] = None
 
     @validator('value_chain_primary', pre=True, always=True)
     def parse_value_chain_primary(cls, v):
@@ -262,6 +295,15 @@ class AnalysisToolsBase(BaseModel):
             except:
                 return {}
         return v or {}
+    
+    @validator('bcg_matrix_data', pre=True, always=True)
+    def parse_bcg_matrix_data(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except:
+                return {}
+        return v or {}
 
 
 class AnalysisToolsCreate(AnalysisToolsBase):
@@ -283,6 +325,7 @@ class AnalysisToolsUpdate(BaseModel):
     pest_economic: Optional[str] = None
     pest_social: Optional[str] = None
     pest_technological: Optional[str] = None
+    bcg_matrix_data: Optional[Dict[str, Any]] = None
 
 
 class AnalysisTools(AnalysisToolsBase):
@@ -292,8 +335,7 @@ class AnalysisTools(AnalysisToolsBase):
     created_at: datetime
     updated_at: Optional[datetime]
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Esquemas para Estrategias
@@ -394,8 +436,7 @@ class Strategies(StrategiesBase):
     created_at: datetime
     updated_at: Optional[datetime]
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Esquemas simplificados para el frontend
@@ -489,3 +530,58 @@ class ExecutiveSummary(BaseModel):
     completion_status: Dict[str, Union[CompletionStatus, OverallCompletion]] = {}
     key_insights: List[str] = []
     recommendations: List[str] = []
+
+
+# Esquemas para PlanUser
+class PlanUserBase(BaseModel):
+    """Esquema base para asociación usuario-plan."""
+    role: str
+    status: str
+
+class PlanUser(PlanUserBase):
+    """Esquema para respuesta de asociación usuario-plan."""
+    id: int
+    plan_id: int
+    user_id: int
+    created_at: datetime
+    updated_at: Optional[datetime]
+
+    model_config = ConfigDict(from_attributes=True)
+
+class PlanUserWithUser(PlanUser):
+    """Esquema para asociación usuario-plan con datos del usuario."""
+    user: User
+
+
+# Esquemas para Notificaciones
+class NotificationBase(BaseModel):
+    """Esquema base para notificaciones."""
+    type: str
+    message: str
+    related_plan_id: Optional[int]
+    invitation_id: Optional[int]
+
+class Notification(NotificationBase):
+    """Esquema para respuesta de notificaciones."""
+    id: int
+    user_id: int
+    status: str
+    created_at: datetime
+    updated_at: Optional[datetime]
+
+    model_config = ConfigDict(from_attributes=True)
+
+class NotificationWithPlan(Notification):
+    """Esquema para notificaciones con datos del plan relacionado."""
+    related_plan: Optional[StrategicPlan]
+
+
+# Esquemas para invitaciones
+class InviteUserRequest(BaseModel):
+    """Esquema para solicitar invitación de usuario."""
+    email: EmailStr
+
+class InvitationResponse(BaseModel):
+    """Esquema para respuesta de invitación."""
+    message: str
+    invitation_id: Optional[int]
