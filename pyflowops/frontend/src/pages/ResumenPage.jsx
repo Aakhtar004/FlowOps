@@ -1,7 +1,9 @@
 import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft, Download, Building2, Calendar, Users, Target, TrendingUp } from 'lucide-react'
-import { usePlan, useCompanyIdentity, useStrategicAnalysis, useStrategies } from '../hooks/useApi'
+import { usePlan, useCompanyIdentity, useStrategicAnalysis, useStrategies, useAnalysisTools } from '../hooks/useApi'
 import LoadingSpinner from '../components/common/LoadingSpinner'
+import { useRef } from 'react'
+import { exportElementToPdf } from '../utils/exportPdf'
 
 const ResumenPage = () => {
   const { planId } = useParams()
@@ -9,8 +11,11 @@ const ResumenPage = () => {
   const { identity, isLoading: identityLoading } = useCompanyIdentity(planId)
   const { analysis, isLoading: analysisLoading } = useStrategicAnalysis(planId)
   const { strategies, isLoading: strategiesLoading } = useStrategies(planId)
+  const { tools, isLoading: toolsLoading } = useAnalysisTools(planId)
 
-  const isLoading = planLoading || identityLoading || analysisLoading || strategiesLoading
+  const resumenRef = useRef(null)
+
+  const isLoading = planLoading || identityLoading || analysisLoading || strategiesLoading || toolsLoading
 
   if (isLoading) {
     return (
@@ -44,6 +49,27 @@ const ResumenPage = () => {
     })
   }
 
+  const onExportPdf = async () => {
+    try {
+      await exportElementToPdf(resumenRef.current, {
+        filename: `resumen-plan-${planId}.pdf`,
+        margin: 10,
+      })
+    } catch (e) {
+      console.error('Error exporting PDF:', e)
+    }
+  }
+
+  // Fusionar fortalezas/debilidades del FODA y de Cadena de Valor
+  const mergedStrengths = [
+    ...(analysis?.internal_strengths || []),
+    ...(tools?.value_chain_support?.strengths || [])
+  ]
+  const mergedWeaknesses = [
+    ...(analysis?.internal_weaknesses || []),
+    ...(tools?.value_chain_support?.weaknesses || [])
+  ]
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header con navegación */}
@@ -57,7 +83,7 @@ const ResumenPage = () => {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver al Editor
             </Link>
-            <button className="btn-secondary">
+            <button className="btn-secondary" onClick={onExportPdf}>
               <Download className="h-4 w-4 mr-2" />
               Exportar PDF
             </button>
@@ -66,7 +92,8 @@ const ResumenPage = () => {
       </div>
 
       {/* Contenido del resumen */}
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
+      <div ref={resumenRef} className="container mx-auto px-4 py-8 max-w-5xl">
+        {/* Encabezado con Logo (APARTADO DE RESUMEN) */}
         {/* Encabezado con Logo */}
         <div className="bg-white rounded-lg shadow-sm p-8 mb-6 text-center border border-gray-200">
           {plan.company_logo_url && (
@@ -75,6 +102,7 @@ const ResumenPage = () => {
                 src={plan.company_logo_url}
                 alt="Logo de la empresa"
                 className="h-32 object-contain"
+                crossOrigin="anonymous"
                 onError={(e) => {
                   e.target.style.display = 'none'
                 }}
@@ -179,14 +207,12 @@ const ResumenPage = () => {
               <Target className="h-6 w-6 mr-2 text-primary-600" />
               Objetivos Estratégicos
             </h2>
-            
             {identity.strategic_mission && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Misión</h3>
                 <p className="text-gray-700">{identity.strategic_mission}</p>
               </div>
             )}
-
             {identity.general_objectives && identity.general_objectives.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Objetivos Generales o Estratégicos</h3>
@@ -198,7 +224,6 @@ const ResumenPage = () => {
                       </span>
                       <p className="text-gray-800 font-medium">{objective.text}</p>
                     </div>
-                    
                     {objective.specific_objectives && objective.specific_objectives.length > 0 && (
                       <div className="ml-8 mt-2">
                         <h4 className="text-sm font-semibold text-gray-700 mb-2">Objetivos Específicos:</h4>
@@ -224,12 +249,11 @@ const ResumenPage = () => {
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6 border border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Análisis FODA</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Fortalezas */}
-              {analysis.internal_strengths && analysis.internal_strengths.length > 0 && (
+              {mergedStrengths.length > 0 && (
                 <div className="border-l-4 border-green-500 pl-4">
                   <h3 className="text-lg font-semibold text-green-700 mb-3">Fortalezas</h3>
                   <ul className="space-y-2">
-                    {analysis.internal_strengths.map((strength, index) => (
+                    {mergedStrengths.map((strength, index) => (
                       <li key={index} className="flex items-start">
                         <span className="text-green-500 mr-2 mt-1">✓</span>
                         <span className="text-gray-700 text-sm">{strength}</span>
@@ -238,8 +262,6 @@ const ResumenPage = () => {
                   </ul>
                 </div>
               )}
-
-              {/* Oportunidades */}
               {analysis.external_opportunities && analysis.external_opportunities.length > 0 && (
                 <div className="border-l-4 border-blue-500 pl-4">
                   <h3 className="text-lg font-semibold text-blue-700 mb-3">Oportunidades</h3>
@@ -253,13 +275,11 @@ const ResumenPage = () => {
                   </ul>
                 </div>
               )}
-
-              {/* Debilidades */}
-              {analysis.internal_weaknesses && analysis.internal_weaknesses.length > 0 && (
+              {mergedWeaknesses.length > 0 && (
                 <div className="border-l-4 border-orange-500 pl-4">
                   <h3 className="text-lg font-semibold text-orange-700 mb-3">Debilidades</h3>
                   <ul className="space-y-2">
-                    {analysis.internal_weaknesses.map((weakness, index) => (
+                    {mergedWeaknesses.map((weakness, index) => (
                       <li key={index} className="flex items-start">
                         <span className="text-orange-500 mr-2 mt-1">⚠</span>
                         <span className="text-gray-700 text-sm">{weakness}</span>
@@ -268,8 +288,6 @@ const ResumenPage = () => {
                   </ul>
                 </div>
               )}
-
-              {/* Amenazas */}
               {analysis.external_threats && analysis.external_threats.length > 0 && (
                 <div className="border-l-4 border-red-500 pl-4">
                   <h3 className="text-lg font-semibold text-red-700 mb-3">Amenazas</h3>
@@ -311,7 +329,6 @@ const ResumenPage = () => {
         {strategies && (
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6 border border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Acciones Competitivas</h2>
-            
             <div className="space-y-6">
               {strategies.game_growth && strategies.game_growth.length > 0 && (
                 <div>
@@ -328,7 +345,6 @@ const ResumenPage = () => {
                   </div>
                 </div>
               )}
-
               {strategies.game_avoid && strategies.game_avoid.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold text-yellow-700 mb-3">Estrategias de Evitar</h3>
@@ -344,7 +360,6 @@ const ResumenPage = () => {
                   </div>
                 </div>
               )}
-
               {strategies.game_merge && strategies.game_merge.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold text-blue-700 mb-3">Estrategias de Fusión</h3>
@@ -360,7 +375,6 @@ const ResumenPage = () => {
                   </div>
                 </div>
               )}
-
               {strategies.game_exit && strategies.game_exit.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold text-red-700 mb-3">Estrategias de Salida</h3>

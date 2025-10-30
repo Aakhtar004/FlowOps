@@ -30,7 +30,10 @@ class InvalidPasswordError(AuthenticationError):
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 # Configuración de seguridad
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(
+    schemes=["bcrypt", "pbkdf2_sha256"],
+    deprecated="auto"
+)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
 
 

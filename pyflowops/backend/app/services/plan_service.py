@@ -16,7 +16,6 @@ from app.schemas.plan_schema import (
     StrategiesCreate, StrategiesUpdate,
     ExecutiveSummary
 )
-from app.graphql.pubsub import PubSub, publish_plan_update, publish_invitation, publish_progress
 
 
 class PlanService:
@@ -145,29 +144,6 @@ class PlanService:
 
         
 
-        # Publish GraphQL subscription event via Redis
-        try:
-            import asyncio
-            asyncio.create_task(publish_plan_update(PubSub(), str(plan_id), {
-                "path": "company_identity",
-                "value": {
-                    "updated_at": identity.updated_at.isoformat() if identity.updated_at else None
-                }
-            }))
-        except Exception:
-            pass
-
-        # Publish progress update (overall percentage)
-        try:
-            import asyncio
-            progress = PlanService.calculate_plan_progress(db, plan_id)
-            asyncio.create_task(publish_progress(PubSub(), str(plan_id), {
-                "step": "overall",
-                "completed": int(round(progress.get("progress_percentage", 0))),
-                "total": 100,
-            }))
-        except Exception:
-            pass
 
         return identity
     
@@ -225,29 +201,6 @@ class PlanService:
                 )
                 db.add(analysis)
 
-        # Publish GraphQL subscription event via Redis
-        try:
-            import asyncio
-            asyncio.create_task(publish_plan_update(PubSub(), str(plan_id), {
-                "path": "strategic_analysis",
-                "value": {
-                    "updated_at": analysis.updated_at.isoformat() if analysis.updated_at else None
-                }
-            }))
-        except Exception:
-            pass
-
-        # Publish progress update (overall percentage)
-        try:
-            import asyncio
-            progress = PlanService.calculate_plan_progress(db, plan_id)
-            asyncio.create_task(publish_progress(PubSub(), str(plan_id), {
-                "step": "overall",
-                "completed": int(round(progress.get("progress_percentage", 0))),
-                "total": 100,
-            }))
-        except Exception:
-            pass
 
         return analysis
     
@@ -313,29 +266,6 @@ class PlanService:
                 )
                 db.add(tools)
 
-        # Publish GraphQL subscription event via Redis
-        try:
-            import asyncio
-            asyncio.create_task(publish_plan_update(PubSub(), str(plan_id), {
-                "path": "analysis_tools",
-                "value": {
-                    "updated_at": tools.updated_at.isoformat() if tools.updated_at else None
-                }
-            }))
-        except Exception:
-            pass
-
-        # Publish progress update (overall percentage)
-        try:
-            import asyncio
-            progress = PlanService.calculate_plan_progress(db, plan_id)
-            asyncio.create_task(publish_progress(PubSub(), str(plan_id), {
-                "step": "overall",
-                "completed": int(round(progress.get("progress_percentage", 0))),
-                "total": 100,
-            }))
-        except Exception:
-            pass
 
         return tools
     
@@ -397,29 +327,6 @@ class PlanService:
                 )
                 db.add(strategies)
 
-        # Publish GraphQL subscription event via Redis
-        try:
-            import asyncio
-            asyncio.create_task(publish_plan_update(PubSub(), str(plan_id), {
-                "path": "strategies",
-                "value": {
-                    "updated_at": strategies.updated_at.isoformat() if strategies.updated_at else None
-                }
-            }))
-        except Exception:
-            pass
-
-        # Publish progress update (overall percentage)
-        try:
-            import asyncio
-            progress = PlanService.calculate_plan_progress(db, plan_id)
-            asyncio.create_task(publish_progress(PubSub(), str(plan_id), {
-                "step": "overall",
-                "completed": int(round(progress.get("progress_percentage", 0))),
-                "total": 100,
-            }))
-        except Exception:
-            pass
 
         return strategies
     
@@ -798,18 +705,6 @@ class PlanService:
             )
             db.add(notification)
 
-        # Publish GraphQL invitation notification via Redis
-        try:
-            import asyncio
-            asyncio.create_task(publish_invitation(PubSub(), str(invitee.id), {
-                "type": "plan_invitation",
-                "message": f'Has sido invitado al plan estratégico "{plan.title}"',
-                "planId": str(plan_id),
-                "fromUserId": str(owner_id),
-                "invitationId": str(plan_user.id),
-            }))
-        except Exception:
-            pass
 
         return plan_user
 

@@ -3,111 +3,75 @@ import { useNavigate, Link } from 'react-router-dom'
 import { LogOut, Menu, X, User, FileText, BarChart3, Bell, Check, CheckCircle, XCircle } from 'lucide-react'
 import { useAuth } from '../../hooks/useApi'
 import { useToast } from '../ui/Toast'
-import { gql, useMutation, useQuery, useSubscription } from '@apollo/client'
+import { useNotifications } from '../../hooks/useApi'
+import { plansAPI } from '../../services/api'
+import { useQueryClient } from 'react-query'
 
-const NOTIFICATIONS_QUERY = gql`
-  query Notifications {
-    notifications { id type message planId fromUserId status createdAt invitationId }
-  }
-`
-
-const MARK_NOTIFICATION_READ = gql`
-  mutation MarkNotificationRead($id: ID!) {
-    markNotificationRead(notificationId: $id) { message }
-  }
-`
-
-const INVITATION_RECEIVED = gql`
-  subscription InvitationReceived($userId: ID!) {
-    invitationReceived(userId: $userId) { id type message planId fromUserId invitationId }
-  }
-`
-
-const RESPOND_INVITATION = gql`
-  mutation RespondInvitation($planId: ID!, $invitationId: ID!, $accept: Boolean!) {
-    respondInvitation(planId: $planId, invitationId: $invitationId, accept: $accept) { message }
-  }
-`
+// Notificaciones manejadas vía REST con useNotifications; sin GraphQL.
 
 const Header = ({ user }) => {
    const [isMenuOpen, setIsMenuOpen] = useState(false)
    const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
    const [isLoggingOut, setIsLoggingOut] = useState(false)
    const [processingInvitation, setProcessingInvitation] = useState(null)
-   const { logoutAsync, user: authUser, isAuthenticated } = useAuth()
-   const { data: notificationsData, refetch } = useQuery(NOTIFICATIONS_QUERY, {
-     fetchPolicy: 'cache-and-network',
-     errorPolicy: 'ignore',
-     // Gate por token válido para evitar carreras en hidratación de estado
-     skip: !isAuthenticated,
-   })
-   const [markRead] = useMutation(MARK_NOTIFICATION_READ, { onCompleted: () => refetch() })
-   const [respondInvitationMutation, { loading: responding }] = useMutation(RESPOND_INVITATION, { onCompleted: () => refetch() })
+   const { logoutAsync, isAuthenticated } = useAuth()
+   const { notifications, isLoading, markAsRead, unreadCount } = useNotifications()
+   const queryClient = useQueryClient()
    const { success, error } = useToast()
    const navigate = useNavigate()
-   const notifications = notificationsData?.notifications || []
-   const unreadCount = notifications.filter(n => n.status === 'unread').length
 
-  useSubscription(INVITATION_RECEIVED, {
-    variables: { userId: String(authUser?.id || authUser?.sub || '') },
-    skip: !isAuthenticated,
-    onData: ({ data }) => {
-      const note = data?.data?.invitationReceived
-      if (!note) return
-      try { success?.(note.message || 'Nueva invitación') } catch (_) {}
-      // Refrescar notificaciones para mostrar la nueva
-      refetch()
-    }
-  })
+  // Notificaciones vía REST; sin suscripciones ni Apollo.
 
-  const handleLogout = async () => {
-    if (isLoggingOut) return // Prevent multiple clicks
+   const handleLogout = async () => {
+     if (isLoggingOut) return // Prevent multiple clicks
 
-    console.log('DEBUG: Logout initiated from Header')
-    setIsLoggingOut(true)
-    try {
-      await logoutAsync()
-      console.log('DEBUG: Logout completed successfully, navigating to /login')
-      success('Has cerrado sesión correctamente. ¡Hasta pronto!')
-      navigate('/login')
-    } catch (error) {
-      console.error('DEBUG: Logout failed:', error)
-      // Still navigate to login even if logout fails
-      navigate('/login')
-    } finally {
-      setIsLoggingOut(false)
-    }
-  }
+     console.log('DEBUG: Logout initiated from Header')
+     setIsLoggingOut(true)
+     try {
+       await logoutAsync()
+       console.log('DEBUG: Logout completed successfully, navigating to /login')
+       success('Has cerrado sesión correctamente. ¡Hasta pronto!')
+       navigate('/login')
+     } catch (error) {
+       console.error('DEBUG: Logout failed:', error)
+       // Still navigate to login even if logout fails
+       navigate('/login')
+     } finally {
+       setIsLoggingOut(false)
+     }
+   }
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen)
-  }
+   const toggleMenu = () => {
+     setIsMenuOpen(!isMenuOpen)
+   }
 
-  const handleAcceptInvitation = async (planId, invitationId) => {
-    if (processingInvitation) return
-    setProcessingInvitation(invitationId)
-    try {
-      await respondInvitationMutation({ variables: { planId, invitationId, accept: true } })
-      success('Invitación aceptada correctamente')
-    } catch (err) {
-      error('Error al aceptar la invitación')
-    } finally {
-      setProcessingInvitation(null)
-    }
-  }
+   const handleAcceptInvitation = async (planId, invitationId) => {
+     if (processingInvitation) return
+     setProcessingInvitation(invitationId)
+     try {
+      await plansAPI.acceptInvitation(planId, invitationId)
+       success('Invitación aceptada correctamente')
+      queryClient.invalidateQueries('notifications')
+     } catch (err) {
+       error('Error al aceptar la invitación')
+     } finally {
+       setProcessingInvitation(null)
+     }
+   }
 
-  const handleRejectInvitation = async (planId, invitationId) => {
-    if (processingInvitation) return
-    setProcessingInvitation(invitationId)
-    try {
-      await respondInvitationMutation({ variables: { planId, invitationId, accept: false } })
-      success('Invitación rechazada')
-    } catch (err) {
-      error('Error al rechazar la invitación')
-    } finally {
-      setProcessingInvitation(null)
-    }
-  }
+   const handleRejectInvitation = async (planId, invitationId) => {
+     if (processingInvitation) return
+     setProcessingInvitation(invitationId)
+     try {
+      await plansAPI.rejectInvitation(planId, invitationId)
+       success('Invitación rechazada')
+      queryClient.invalidateQueries('notifications')
+     } catch (err) {
+       error('Error al rechazar la invitación')
+     } finally {
+       setProcessingInvitation(null)
+     }
+   }
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 fixed w-full top-0 z-50">
@@ -140,7 +104,6 @@ const Header = ({ user }) => {
           {/* Notificaciones y usuario */}
           <div className="flex items-center space-x-4">
             {/* Campana de notificaciones */}
-            {(
             <div className="relative">
               <button
                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
@@ -200,7 +163,7 @@ const Header = ({ user }) => {
                             ) : (
                               notification.status === 'unread' && (
                                 <button
-                                  onClick={() => markRead({ variables: { id: notification.id } })}
+                                  onClick={() => markAsRead(notification.id)}
                                   className="mt-2 text-xs text-primary-600 hover:text-primary-800 flex items-center"
                                 >
                                   <Check className="h-3 w-3 mr-1" />
@@ -223,8 +186,6 @@ const Header = ({ user }) => {
                 </div>
               )}
             </div>
-            )}
-
             {/* Información del usuario */}
             <div className="hidden md:flex items-center space-x-3">
               <div className="text-right">

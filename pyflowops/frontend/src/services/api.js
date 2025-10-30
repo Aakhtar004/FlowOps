@@ -1,14 +1,40 @@
 import axios from 'axios'
 import toast from 'react-hot-toast'
 
+// Resolver base URL de la API de forma robusta para entornos docker/host
+const resolveApiBase = () => {
+  const envUrl = import.meta?.env?.VITE_API_URL
+  if (envUrl) {
+    try {
+      const u = new URL(envUrl)
+      // Cuando la build usa 'http://backend:8000', el navegador del host no puede resolver 'backend'
+      if (u.hostname === 'backend' && typeof window !== 'undefined') {
+        return `${window.location.protocol}//${window.location.hostname}:8000`
+      }
+      return envUrl
+    } catch (_) {
+      // Si no es una URL válida, continuar a fallback
+    }
+  }
+  // Fallback por defecto: usar el host actual en puerto 8000
+  if (typeof window !== 'undefined') {
+    return `${window.location.protocol}//${window.location.hostname}:8000`
+  }
+  return 'http://127.0.0.1:8000'
+}
+
+const API_BASE = resolveApiBase()
+
 // Configuración base de Axios
 const api = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL}`,
+  baseURL: API_BASE,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
 })
+
+console.log('DEBUG: Axios baseURL:', API_BASE)
 
 // Interceptor para incluir el token de autenticación
 api.interceptors.request.use(
@@ -87,165 +113,155 @@ export const authAPI = {
   },
 
   logout: async () => {
-    console.log('DEBUG: Making logout API call to /v1/auth/logout')
-    const response = await api.post('/api/v1/auth/logout')
-    console.log('DEBUG: Logout API call completed, response:', response.data)
-    return response.data
+    // Sin endpoint real; limpieza local
+    try {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      window.dispatchEvent(new Event('auth:logout'))
+    } catch (_) {}
+    return { message: 'Sesión cerrada' }
   },
-
   getProfile: async () => {
     const response = await api.get('/api/v1/auth/me')
     return response.data
   },
 }
 
-// Funciones para planes estratégicos
+// Funciones de planes
 export const plansAPI = {
-  getAll: async () => {
-    const response = await api.get('/api/v1/plans/')
-    return response.data
-  },
-
-  getById: async (planId) => {
-    const response = await api.get(`/api/v1/plans/${planId}`)
-    return response.data
-  },
-
-  create: async (planData) => {
-    const response = await api.post('/api/v1/plans/', planData)
-    return response.data
-  },
-
-  update: async (planId, planData) => {
-    const response = await api.put(`/api/v1/plans/${planId}`, planData)
-    return response.data
-  },
-
-  delete: async (planId) => {
-    const response = await api.delete(`/api/v1/plans/${planId}`)
-    return response.data
-  },
-
-  // Identidad de la empresa
-  getCompanyIdentity: async (planId) => {
-    const response = await api.get(`/api/v1/plans/${planId}/company-identity`)
-    return response.data
-  },
-
-  updateCompanyIdentity: async (planId, identityData) => {
-    console.log('DEBUG: Sending updateCompanyIdentity request with data:', identityData)
-    const response = await api.put(`/api/v1/plans/${planId}/company-identity`, identityData)
-    console.log('DEBUG: updateCompanyIdentity response:', response.data)
-    return response.data
-  },
-
-  // Análisis estratégico
-  getStrategicAnalysis: async (planId) => {
-    const response = await api.get(`/api/v1/plans/${planId}/strategic-analysis`)
-    return response.data
-  },
-
-  updateStrategicAnalysis: async (planId, analysisData) => {
-    const response = await api.put(`/api/v1/plans/${planId}/strategic-analysis`, analysisData)
-    return response.data
-  },
-
-  // Herramientas de análisis
-  getAnalysisTools: async (planId) => {
-    const response = await api.get(`/api/v1/plans/${planId}/analysis-tools`)
-    return response.data
-  },
-
-  updateAnalysisTools: async (planId, toolsData) => {
-    const response = await api.put(`/api/v1/plans/${planId}/analysis-tools`, toolsData)
-    return response.data
-  },
-
-  // Estrategias
-  getStrategies: async (planId) => {
-    const response = await api.get(`/api/v1/plans/${planId}/strategies`)
-    return response.data
-  },
-
-  updateStrategies: async (planId, strategiesData) => {
-    const response = await api.put(`/api/v1/plans/${planId}/strategies`, strategiesData)
-    return response.data
-  },
-
-  // Endpoints simplificados
-  updateIdentitySimple: async (planId, identityData) => {
-    const response = await api.put(`/api/v1/plans/${planId}/identity`, identityData)
-    return response.data
-  },
-
-  updateSwotSimple: async (planId, swotData) => {
-    const response = await api.put(`/api/v1/plans/${planId}/swot`, swotData)
-    return response.data
-  },
-
-  updateToolsSimple: async (planId, toolsData) => {
-    const response = await api.put(`/api/v1/plans/${planId}/tools`, toolsData)
-    return response.data
-  },
-
-  updateStrategiesSimple: async (planId, strategiesData) => {
-    const response = await api.put(`/api/v1/plans/${planId}/strategies-simple`, strategiesData)
-    return response.data
-  },
-
-  // Resumen ejecutivo
-  getExecutiveSummary: async (planId) => {
-    const response = await api.get(`/api/v1/plans/${planId}/executive-summary`)
-    return response.data
-  },
-
-  // Funciones para compartir planes
-  inviteUser: async (planId, email) => {
-    const response = await api.post(`/api/v1/plans/${planId}/invite`, { email })
-    return response.data
-  },
-
-  acceptInvitation: async (planId, invitationId) => {
-    const response = await api.post(`/api/v1/plans/${planId}/invitations/${invitationId}/accept`)
-    return response.data
-  },
-
-  rejectInvitation: async (planId, invitationId) => {
-    const response = await api.post(`/api/v1/plans/${planId}/invitations/${invitationId}/reject`)
-    return response.data
-  },
-
-  getPlanUsers: async (planId) => {
-    const response = await api.get(`/api/v1/plans/${planId}/users`)
-    return response.data
-  },
-
-  removeUserFromPlan: async (planId, userId) => {
-    const response = await api.delete(`/api/v1/plans/${planId}/users/${userId}`)
-    return response.data
-  },
-
-  // Notificaciones
-  getNotifications: async () => {
-    const response = await api.get('/api/v1/plans/notifications')
-    return response.data
-  },
-
-  markNotificationRead: async (notificationId) => {
-    const response = await api.put(`/api/v1/plans/notifications/${notificationId}/read`)
-    return response.data
-  },
-
-  // Planes separados
   getOwnedPlans: async () => {
     const response = await api.get('/api/v1/plans/owned')
     return response.data
   },
-
   getSharedPlans: async () => {
     const response = await api.get('/api/v1/plans/shared')
     return response.data
   },
-}
+  createPlan: async (planData) => {
+    const response = await api.post('/api/v1/plans', planData)
+    return response.data
+  },
+  deletePlan: async (planId) => {
+    const response = await api.delete(`/api/v1/plans/${planId}`)
+    return response.data
+  },
+  getById: async (planId) => {
+    const response = await api.get(`/api/v1/plans/${planId}`)
+    return response.data
+  },
+  // Company Identity (full)
+  updateCompanyIdentity: async (planId, data) => {
+    const response = await api.put(`/api/v1/plans/${planId}/company-identity`, data)
+    return response.data
+  },
+  getCompanyIdentity: async (planId) => {
+    const response = await api.get(`/api/v1/plans/${planId}/company-identity`)
+    return response.data
+  },
+  // Strategic Analysis (full)
+  updateStrategicAnalysis: async (planId, data) => {
+    const response = await api.put(`/api/v1/plans/${planId}/strategic-analysis`, data)
+    return response.data
+  },
+  getStrategicAnalysis: async (planId) => {
+    const response = await api.get(`/api/v1/plans/${planId}/strategic-analysis`)
+    return response.data
+  },
+  // Analysis Tools (full)
+  updateAnalysisTools: async (planId, data) => {
+    const response = await api.put(`/api/v1/plans/${planId}/analysis-tools`, data)
+    return response.data
+  },
+  getAnalysisTools: async (planId) => {
+    const response = await api.get(`/api/v1/plans/${planId}/analysis-tools`)
+    return response.data
+  },
+  // Strategies (full)
+  updateStrategies: async (planId, data) => {
+    const response = await api.put(`/api/v1/plans/${planId}/strategies`, data)
+    return response.data
+  },
+  getStrategies: async (planId) => {
+    const response = await api.get(`/api/v1/plans/${planId}/strategies`)
+    return response.data
+  },
+  // Simplificados
+  updateIdentitySimple: async (planId, data) => {
+    const response = await api.put(`/api/v1/plans/${planId}/identity`, data)
+    return response.data
+  },
+  updateSwotSimple: async (planId, data) => {
+    const response = await api.put(`/api/v1/plans/${planId}/swot`, data)
+    return response.data
+  },
+  updateToolsSimple: async (planId, data) => {
+    const response = await api.put(`/api/v1/plans/${planId}/tools`, data)
+    return response.data
+  },
+  updateStrategiesSimple: async (planId, data) => {
+    const response = await api.put(`/api/v1/plans/${planId}/strategies-simple`, data)
+    return response.data
+  },
 
-export default api
+  // Usuarios del plan
+  getPlanUsers: async (planId) => {
+    const response = await api.get(`/api/v1/plans/${planId}/users`)
+    return response.data
+  },
+  inviteUser: async (planId, email) => {
+    const response = await api.post(`/api/v1/plans/${planId}/invite`, { email })
+    return response.data
+  },
+  removeUserFromPlan: async (planId, userId) => {
+    const response = await api.delete(`/api/v1/plans/${planId}/users/${userId}`)
+    return response.data
+  },
+  getAll: async () => {
+    const response = await api.get('/api/v1/plans')
+    return response.data
+  },
+  create: async (planData) => {
+    const response = await api.post('/api/v1/plans', planData)
+    return response.data
+  },
+  update: async (planId, data) => {
+    const response = await api.put(`/api/v1/plans/${planId}`, data)
+    return response.data
+  },
+  delete: async (planId) => {
+    const response = await api.delete(`/api/v1/plans/${planId}`)
+    return response.data
+  },
+  getNotifications: async () => {
+    const response = await api.get('/api/v1/plans/notifications')
+    // Mapear campos del backend a los esperados por el frontend
+    return (response.data || []).map((n) => ({
+      id: n.id,
+      userId: n.user_id,
+      type: n.type,
+      message: n.message,
+      planId: n.related_plan_id,
+      invitationId: n.invitation_id,
+      status: n.status,
+      createdAt: n.created_at,
+      updatedAt: n.updated_at,
+    }))
+  },
+  markNotificationRead: async (notificationId) => {
+    const response = await api.put(`/api/v1/plans/notifications/${notificationId}/read`)
+    return response.data
+  },
+  getExecutiveSummary: async (planId) => {
+    const response = await api.get(`/api/v1/plans/${planId}/executive-summary`)
+    return response.data
+  },
+  // Invitaciones: aceptar / rechazar
+  acceptInvitation: async (planId, invitationId) => {
+    const response = await api.post(`/api/v1/plans/${planId}/invitations/${invitationId}/accept`)
+    return response.data
+  },
+  rejectInvitation: async (planId, invitationId) => {
+    const response = await api.post(`/api/v1/plans/${planId}/invitations/${invitationId}/reject`)
+    return response.data
+  },
+}

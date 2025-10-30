@@ -394,8 +394,25 @@ export const useStrategies = (planId) => {
 // Hook para notificaciones
 export const useNotifications = () => {
   const queryClient = useQueryClient()
+  
+  // Solo hacer la query si hay token de autenticación
+  const isAuthenticated = !!localStorage.getItem('token')
 
-  const notificationsQuery = useQuery('notifications', plansAPI.getNotifications)
+  const notificationsQuery = useQuery(
+    'notifications', 
+    plansAPI.getNotifications,
+    {
+      enabled: isAuthenticated, // Solo ejecutar si está autenticado
+      retry: false,
+      refetchOnWindowFocus: false, // Evitar refetch automático
+      onError: (error) => {
+        // Si es 401, probablemente el token expiró
+        if (error?.response?.status === 401) {
+          console.log('DEBUG: Notifications query failed with 401, user likely logged out')
+        }
+      }
+    }
+  )
 
   const markReadMutation = useMutation(
     (notificationId) => plansAPI.markNotificationRead(notificationId),

@@ -1,19 +1,126 @@
 -- Script de inicialización para PostgreSQL
--- Este script se ejecuta automáticamente cuando se crea el contenedor de la base de datos
+-- Se ejecuta automáticamente al crear el contenedor (si el volumen está vacío)
 
--- Crear extensiones necesarias
+-- Extensiones necesarias (cuando se requieran)
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Configurar timezone
+-- Configuración
 SET timezone = 'UTC';
 
--- Crear usuario demo (opcional para pruebas)
--- La aplicación creará las tablas automáticamente a través de SQLAlchemy
+-- Tablas
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  email VARCHAR(100) NOT NULL UNIQUE,
+  hashed_password VARCHAR(128) NOT NULL,
+  full_name VARCHAR(100),
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  is_superuser BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
 
--- Agregar nuevas columnas para objetivos estratégicos detallados
-ALTER TABLE company_identity ADD COLUMN IF NOT EXISTS strategic_mission TEXT;
-ALTER TABLE company_identity ADD COLUMN IF NOT EXISTS general_objectives TEXT;
+CREATE TABLE IF NOT EXISTS strategic_plans (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  title VARCHAR(200) NOT NULL,
+  description TEXT,
+  owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  company_name VARCHAR(200),
+  company_logo_url VARCHAR(500),
+  promoters TEXT,
+  strategic_units TEXT,
+  conclusions TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
 
--- Quitar columnas obsoletas
-ALTER TABLE company_identity DROP COLUMN IF EXISTS objectives;
-ALTER TABLE company_identity DROP COLUMN IF EXISTS strategic_mission;
+CREATE TABLE IF NOT EXISTS company_identity (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  strategic_plan_id INTEGER NOT NULL REFERENCES strategic_plans(id) ON DELETE CASCADE,
+  mission TEXT,
+  vision TEXT,
+  values TEXT,
+  general_objectives TEXT,
+  strategic_mission TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS strategic_analysis (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  strategic_plan_id INTEGER NOT NULL REFERENCES strategic_plans(id) ON DELETE CASCADE,
+  internal_strengths TEXT,
+  internal_weaknesses TEXT,
+  external_opportunities TEXT,
+  external_threats TEXT,
+  swot_summary TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS analysis_tools (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  strategic_plan_id INTEGER NOT NULL REFERENCES strategic_plans(id) ON DELETE CASCADE,
+  value_chain_primary TEXT,
+  value_chain_support TEXT,
+  participation_matrix TEXT,
+  porter_competitive_rivalry TEXT,
+  porter_supplier_power TEXT,
+  porter_buyer_power TEXT,
+  porter_threat_substitutes TEXT,
+  porter_threat_new_entrants TEXT,
+  pest_political TEXT,
+  pest_economic TEXT,
+  pest_social TEXT,
+  pest_technological TEXT,
+  bcg_matrix_data TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS strategies (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  strategic_plan_id INTEGER NOT NULL REFERENCES strategic_plans(id) ON DELETE CASCADE,
+  strategy_identification TEXT,
+  game_growth TEXT,
+  game_avoid TEXT,
+  game_merge TEXT,
+  game_exit TEXT,
+  priority_strategies TEXT,
+  implementation_timeline TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS plan_users (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  plan_id INTEGER NOT NULL REFERENCES strategic_plans(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role VARCHAR(20) NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ,
+  CONSTRAINT unique_plan_user UNIQUE (plan_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type VARCHAR(50) NOT NULL,
+  message TEXT NOT NULL,
+  related_plan_id INTEGER REFERENCES strategic_plans(id) ON DELETE SET NULL,
+  invitation_id INTEGER REFERENCES plan_users(id) ON DELETE SET NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'unread',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+
+-- Índices (opcionales si ya existen por UNIQUE o PK)
+CREATE INDEX IF NOT EXISTS idx_plan_users_plan_id ON plan_users (plan_id);
+CREATE INDEX IF NOT EXISTS idx_plan_users_user_id ON plan_users (user_id);
+
+-- Notas:
+-- - El backend también ejecuta create_tables() y run_migrations() en el arranque.
+-- - Al usar IF NOT EXISTS, evitamos conflictos si las tablas ya existen.
+-- - Para bases ya inicializadas, puedes reejecutar este script desde el contenedor.

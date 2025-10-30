@@ -1,56 +1,12 @@
 import { useState } from 'react'
-import { gql, useQuery, useMutation } from '@apollo/client'
+import { usePlanUsers } from '@/hooks/useApi'
 import { Users, Mail, UserMinus, Crown } from 'lucide-react'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
 
-// GraphQL operations for collaborators
-const PLAN_COLLABORATORS = gql`
-  query PlanCollaborators($planId: ID!) {
-    planCollaborators(planId: $planId) {
-      id
-      role
-      status
-      user { id email name }
-    }
-  }
-`
-
-const INVITE_USER = gql`
-  mutation InviteUser($planId: ID!, $email: String!) {
-    inviteUser(planId: $planId, email: $email) { message invitationId }
-  }
-`
-
-const REMOVE_COLLABORATOR = gql`
-  mutation RemoveCollaborator($planId: ID!, $userId: ID!) {
-    removeCollaborator(planId: $planId, userId: $userId) { message }
-  }
-`
-
-const UPDATE_COLLABORATOR_ROLE = gql`
-  mutation UpdateCollaboratorRole($planId: ID!, $userId: ID!, $role: String!) {
-    updateCollaboratorRole(planId: $planId, userId: $userId, role: $role) { message }
-  }
-`
-
 const UsersManager = ({ planId }) => {
-  const { data: collaboratorsData, loading: collaboratorsLoading, refetch } = useQuery(PLAN_COLLABORATORS, {
-    variables: { planId },
-    skip: !planId,
-    fetchPolicy: 'cache-and-network'
-  })
-  const [inviteUserMutation, { loading: isInviting }] = useMutation(INVITE_USER, {
-    refetchQueries: [{ query: PLAN_COLLABORATORS, variables: { planId } }],
-  })
-  const [removeCollaboratorMutation, { loading: isRemoving }] = useMutation(REMOVE_COLLABORATOR, {
-    refetchQueries: [{ query: PLAN_COLLABORATORS, variables: { planId } }],
-  })
-  const [updateRoleMutation, { loading: isUpdatingRole }] = useMutation(UPDATE_COLLABORATOR_ROLE, {
-    refetchQueries: [{ query: PLAN_COLLABORATORS, variables: { planId } }],
-  })
+  const { users, isLoading, inviteUser, removeUser, isInviting, isRemoving } = usePlanUsers(planId)
   const [inviteEmail, setInviteEmail] = useState('')
   const [emailError, setEmailError] = useState('')
-  const users = collaboratorsData?.planCollaborators || []
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -71,36 +27,28 @@ const UsersManager = ({ planId }) => {
       return
     }
 
-    // Check if user is already in the plan
-    const existingUser = users.find(user => user.user.email === inviteEmail)
+    // Verificar si el usuario ya existe en el plan
+    const existingUser = users.find((u) => u.user.email === inviteEmail)
     if (existingUser) {
       setEmailError('Este usuario ya tiene acceso al plan')
       return
     }
 
     try {
-      await inviteUserMutation({ variables: { planId, email: inviteEmail.trim() } })
+      await inviteUser(inviteEmail.trim())
       setInviteEmail('')
-    } catch (error) {
-      // Error is handled by the hook
+    } catch (err) {
+      // El hook maneja errores
     }
   }
 
   const handleRemoveUser = async (userId) => {
     if (window.confirm('¿Estás seguro de que quieres remover a este usuario del plan?')) {
       try {
-        await removeCollaboratorMutation({ variables: { planId, userId } })
-      } catch (error) {
-        // Error is handled by the hook
+        await removeUser(userId)
+      } catch (err) {
+        // El hook maneja errores
       }
-    }
-  }
-
-  const handleChangeRole = async (userId, role) => {
-    try {
-      await updateRoleMutation({ variables: { planId, userId, role } })
-    } catch (error) {
-      // handled by mutation
     }
   }
 
@@ -112,6 +60,10 @@ const UsersManager = ({ planId }) => {
         return 'Miembro'
       case 'pending':
         return 'Pendiente'
+      case 'viewer':
+        return 'Solo lectura'
+      case 'editor':
+        return 'Edición'
       default:
         return role
     }
@@ -125,6 +77,10 @@ const UsersManager = ({ planId }) => {
         return 'text-green-600 bg-green-100'
       case 'pending':
         return 'text-yellow-600 bg-yellow-100'
+      case 'viewer':
+        return 'text-gray-600 bg-gray-100'
+      case 'editor':
+        return 'text-blue-600 bg-blue-100'
       default:
         return 'text-gray-600 bg-gray-100'
     }
@@ -188,7 +144,7 @@ const UsersManager = ({ planId }) => {
           </p>
         </div>
         <div className="card-content">
-          {collaboratorsLoading ? (
+          {isLoading ? (
             <div className="flex justify-center py-8">
               <LoadingSpinner size="medium" text="Cargando usuarios..." />
             </div>
@@ -227,19 +183,6 @@ const UsersManager = ({ planId }) => {
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${getUserRoleColor(planUser.role)}`}>
                       {getUserRoleLabel(planUser.role)}
                     </span>
-                    {planUser.role !== 'owner' && (
-                      <select
-                        className="text-sm border rounded px-2 py-1"
-                        value={planUser.role}
-                        onChange={(e) => handleChangeRole(planUser.user.id, e.target.value)}
-                        disabled={isUpdatingRole}
-                        title="Permisos"
-                      >
-                        <option value="viewer">Solo lectura</option>
-                        <option value="editor">Edición</option>
-                        <option value="member">Miembro</option>
-                      </select>
-                    )}
                     {planUser.role !== 'owner' && (
                       <button
                         onClick={() => handleRemoveUser(planUser.user.id)}

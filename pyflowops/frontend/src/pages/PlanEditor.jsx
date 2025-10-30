@@ -7,9 +7,7 @@ import LoadingSpinner from '../components/common/LoadingSpinner'
 import IdentityEditor from '../components/plan/IdentityEditor'
 import ValueChainEditor from '../components/plan/ValueChainEditor'
 import BCGMatrixEditor from '../components/plan/BCGMatrixEditor'
-import SwotEditor from '../components/plan/SwotEditor'
-import AnalysisToolsEditor from '../components/plan/AnalysisToolsEditor'
-import StrategiesEditor from '../components/plan/StrategiesEditor'
+import PorterMatrix from '../components/plan/PorterMatrix'
 import CompanyInfoEditor from '../components/plan/CompanyInfoEditor'
 import UsersManager from '../components/plan/UsersManager'
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
@@ -176,8 +174,7 @@ const PlanEditor = () => {
       title: 'Matriz de Porter',
       path: `/plan/${planId}/porter`,
       icon: TrendingUp,
-      component: null, // Implementación a futuro
-      disabled: true
+      component: PorterMatrix
     },
     {
       id: 'pest',
@@ -202,6 +199,13 @@ const PlanEditor = () => {
       icon: BarChart3,
       component: null, // Implementación a futuro
       disabled: true
+    },
+    {
+      id: 'users',
+      title: 'Compartir / Usuarios',
+      path: `/plan/${planId}/usuarios`,
+      icon: Users,
+      component: null
     }
   ]
 
@@ -355,7 +359,7 @@ const PlanEditor = () => {
       {/* Active Tab Content */}
       <div className="space-y-8">
         {activeTab === 'users' ? (
-          <UsersManager />
+          <UsersManager planId={planId} />
         ) : ActiveComponent ? (
           <ActiveComponent
             planId={planId}

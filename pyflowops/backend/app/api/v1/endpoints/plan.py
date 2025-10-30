@@ -553,6 +553,8 @@ async def get_analysis_tools(
             "pest_economic": tools.pest_economic,
             "pest_social": tools.pest_social,
             "pest_technological": tools.pest_technological,
+            # Incluir datos dinámicos de BCG para que el frontend reciba el JSON completo
+            "bcg_matrix_data": tools.bcg_matrix_data,
             "created_at": tools.created_at,
             "updated_at": tools.updated_at
         }

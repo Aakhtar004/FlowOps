@@ -14,7 +14,6 @@ from app.db.database import create_tables, SessionLocal
 from app.db.seed import seed_initial_users
 from app.db.migrations import run_migrations
 from app.api.v1.endpoints import auth, plan
-from app.graphql.schema import graphql_router
 from app.middleware.request_id import RequestIDMiddleware
 
 # Crear aplicación FastAPI
@@ -132,7 +131,6 @@ async def metrics():
 # Incluir routers de la API
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(plan.router, prefix=settings.API_V1_STR)
-app.include_router(graphql_router, prefix="/graphql")
 
 
 if __name__ == "__main__":
