@@ -26,7 +26,6 @@ export const useAuth = () => {
       localStorage.setItem('token', data.access_token)
       localStorage.setItem('user', JSON.stringify(data.user))
       queryClient.setQueryData('user', data.user)
-      toast.success('¡Bienvenido!')
       // Fuerza re-render para que isAuthenticated se actualice inmediatamente
       try { setAuthVersion(v => v + 1) } catch (_) {}
     },
@@ -431,6 +430,7 @@ export const useNotifications = () => {
     isLoading: notificationsQuery.isLoading,
     error: notificationsQuery.error,
     markAsRead: markReadMutation.mutate,
+    markAsReadAsync: markReadMutation.mutateAsync,
     unreadCount: (notificationsQuery.data || []).filter(n => n.status === 'unread').length,
   }
 }

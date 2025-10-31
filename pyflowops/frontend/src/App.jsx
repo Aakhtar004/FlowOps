@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useAuth } from './hooks/useApi'
-import { ToastProvider } from './components/ui/Toast'
 import Header from './components/common/Header'
 import AuthPage from './pages/AuthPage'
 import Dashboard from './pages/Dashboard'
@@ -21,9 +20,7 @@ function AppContent() {
   }
 
   return (
-    <ToastProvider>
-      <AppInner isAuthenticated={isAuthenticated} user={user} />
-    </ToastProvider>
+    <AppInner isAuthenticated={isAuthenticated} user={user} />
   )
 }
 

@@ -15,7 +15,7 @@ const Header = ({ user }) => {
    const [isLoggingOut, setIsLoggingOut] = useState(false)
    const [processingInvitation, setProcessingInvitation] = useState(null)
    const { logoutAsync, isAuthenticated } = useAuth()
-   const { notifications, isLoading, markAsRead, unreadCount } = useNotifications()
+   const { notifications, isLoading, markAsRead, markAsReadAsync, unreadCount } = useNotifications()
    const queryClient = useQueryClient()
    const { success, error } = useToast()
    const navigate = useNavigate()
@@ -45,27 +45,39 @@ const Header = ({ user }) => {
      setIsMenuOpen(!isMenuOpen)
    }
 
-   const handleAcceptInvitation = async (planId, invitationId) => {
-     if (processingInvitation) return
-     setProcessingInvitation(invitationId)
-     try {
+  const handleAcceptInvitation = async (notificationId, planId, invitationId) => {
+    if (processingInvitation) return
+    setProcessingInvitation(invitationId)
+    try {
       await plansAPI.acceptInvitation(planId, invitationId)
-       success('Invitación aceptada correctamente')
+      success('Invitación aceptada correctamente')
+      // Actualizar notificaciones y dashboard sin redirigir
       queryClient.invalidateQueries('notifications')
-     } catch (err) {
-       error('Error al aceptar la invitación')
-     } finally {
-       setProcessingInvitation(null)
-     }
-   }
+      queryClient.invalidateQueries('sharedPlans')
+      // Marcar la notificación como leída para que desaparezca el botón "Aceptar"
+      try { await markAsReadAsync(notificationId) } catch (_) {}
+      // Forzar refetch inmediato para que el Dashboard se actualice en el acto
+      try {
+        await queryClient.refetchQueries({ queryKey: 'sharedPlans', exact: true })
+        await queryClient.refetchQueries({ queryKey: 'notifications', exact: true })
+      } catch (_) {}
+    } catch (err) {
+      error('Error al aceptar la invitación')
+    } finally {
+      setProcessingInvitation(null)
+    }
+  }
 
-   const handleRejectInvitation = async (planId, invitationId) => {
+   const handleRejectInvitation = async (notificationId, planId, invitationId) => {
      if (processingInvitation) return
      setProcessingInvitation(invitationId)
      try {
       await plansAPI.rejectInvitation(planId, invitationId)
        success('Invitación rechazada')
+      // Marcar la notificación como leída/atendida y refrescar
+      try { await markAsReadAsync(notificationId) } catch (_) {}
       queryClient.invalidateQueries('notifications')
+      try { await queryClient.refetchQueries({ queryKey: 'notifications', exact: true }) } catch (_) {}
      } catch (err) {
        error('Error al rechazar la invitación')
      } finally {
@@ -141,10 +153,10 @@ const Header = ({ user }) => {
                             <p className="text-xs text-gray-500 mt-1">
                               {new Date(notification.createdAt).toLocaleDateString('es-ES')}
                             </p>
-                            {notification.type === 'plan_invitation' && notification.invitationId ? (
+                            {notification.type === 'plan_invitation' && notification.invitationId && notification.status === 'unread' ? (
                               <div className="mt-2 flex space-x-2">
                                 <button
-                                  onClick={() => handleAcceptInvitation(notification.planId, notification.invitationId)}
+                                  onClick={() => handleAcceptInvitation(notification.id, notification.planId, notification.invitationId)}
                                   disabled={processingInvitation === notification.invitationId}
                                   className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 disabled:opacity-50 flex items-center"
                                 >
@@ -152,7 +164,7 @@ const Header = ({ user }) => {
                                   Aceptar
                                 </button>
                                 <button
-                                  onClick={() => handleRejectInvitation(notification.planId, notification.invitationId)}
+                                  onClick={() => handleRejectInvitation(notification.id, notification.planId, notification.invitationId)}
                                   disabled={processingInvitation === notification.invitationId}
                                   className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 disabled:opacity-50 flex items-center"
                                 >

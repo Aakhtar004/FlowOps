@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, FileText, Calendar, Eye, Edit, Trash2, Search, Target, CheckCircle, Clock, Users } from 'lucide-react'
 import { useOwnedPlans, useSharedPlans } from '../hooks/useApi'
+import { plansAPI } from '../services/api'
 import { useToast } from '../components/ui/Toast'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import CreatePlanModal from '../components/forms/CreatePlanModal'
+import ConfirmDeleteModal from '../components/forms/ConfirmDeleteModal'
 import { useQueryClient } from 'react-query'
 
 const ProgressBar = ({ progress, className = "" }) => {
@@ -56,6 +58,10 @@ const Dashboard = () => {
   const { success, error } = useToast()
   const queryClient = useQueryClient()
 
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [deletePlanId, setDeletePlanId] = useState(null)
+  const [deletePlanTitle, setDeletePlanTitle] = useState('')
+
   // Actualizar planes cada 30 segundos para reflejar cambios de progreso
   useEffect(() => {
     const interval = setInterval(() => {
@@ -75,20 +81,42 @@ const Dashboard = () => {
     (plan.description && plan.description.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
-  const handleDeletePlan = async (planId) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este plan? Esta acción no se puede deshacer.')) {
-      try {
-        await deletePlan(planId)
-        success('Plan eliminado correctamente.')
-      } catch (err) {
-        error('Error al eliminar el plan. Inténtalo de nuevo.')
+  // Abrir/cerrar modal de eliminación y confirmar borrado
+  const openDeleteModal = (plan) => {
+    setDeletePlanId(plan.id)
+    setDeletePlanTitle(plan.title || '')
+    setIsDeleteModalOpen(true)
+  }
+
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false)
+    setDeletePlanId(null)
+    setDeletePlanTitle('')
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deletePlanId) return
+    try {
+      const users = await plansAPI.getPlanUsers(deletePlanId)
+      const sharedUsers = (users || []).filter(u => ['pending', 'accepted'].includes(u.status))
+      if (sharedUsers.length > 0) {
+        error('No se puede eliminar: el plan está compartido. Remueve accesos primero.')
+        closeDeleteModal()
+        return
       }
+      deletePlan(deletePlanId)
+      closeDeleteModal()
+    } catch (e) {
+      error('No se pudo verificar usuarios del plan. Intenta nuevamente.')
+      closeDeleteModal()
     }
   }
 
+  // handleDeletePlan eliminado: unificamos flujo con modal de confirmación
+
   const handlePlanCreated = () => {
     setIsCreateModalOpen(false)
-    success('¡Plan estratégico creado exitosamente! Ya puedes empezar a editarlo.')
+    // Unificación de mensajes: el hook de creación ya muestra el toast.
   }
 
   const formatDate = (dateString) => {
@@ -258,9 +286,8 @@ const Dashboard = () => {
                           <Edit className="h-3 w-3 mr-1" />
                           Editar Plan
                         </Link>
-
                         <button
-                          onClick={() => handleDeletePlan(plan.id)}
+                          onClick={() => openDeleteModal(plan)}
                           disabled={isDeleting}
                           className="text-red-600 hover:text-red-800 p-2 rounded transition-colors"
                           title="Eliminar plan"
@@ -374,14 +401,26 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Modal de crear plan */}
-      {isCreateModalOpen && (
-        <CreatePlanModal
-          isOpen={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
-          onPlanCreated={handlePlanCreated}
-        />
-      )}
+  {/* Modal de crear plan */}
+  {isCreateModalOpen && (
+    <CreatePlanModal
+      isOpen={isCreateModalOpen}
+      onClose={() => setIsCreateModalOpen(false)}
+      onPlanCreated={handlePlanCreated}
+    />
+  )}
+
+  {/* Modal de confirmación para eliminar plan */}
+  {isDeleteModalOpen && (
+    <ConfirmDeleteModal
+      isOpen={isDeleteModalOpen}
+      title={deletePlanTitle}
+      onClose={closeDeleteModal}
+      onConfirm={handleConfirmDelete}
+      confirmText={isDeleting ? 'Eliminando…' : 'Eliminar'}
+      disabled={isDeleting}
+    />
+  )}
     </div>
   )
 }

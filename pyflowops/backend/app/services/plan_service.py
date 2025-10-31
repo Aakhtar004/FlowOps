@@ -454,8 +454,13 @@ class PlanService:
 
             # Calcular completitud de herramientas
             has_value_chain = bool(tools.value_chain_primary or tools.value_chain_support)
-            has_porter = bool(tools.porter_competitive_rivalry or tools.porter_supplier_power or
-                            tools.porter_buyer_power or tools.porter_threat_substitutes or tools.porter_threat_new_entrants)
+            # Considerar las 4 fuerzas utilizadas en frontend (excluye supplier_power)
+            has_porter = bool(
+                tools.porter_competitive_rivalry or
+                tools.porter_buyer_power or
+                tools.porter_threat_substitutes or
+                tools.porter_threat_new_entrants
+            )
             has_pest = bool(tools.pest_political or tools.pest_economic or tools.pest_social or tools.pest_technological)
             tools_complete = has_value_chain and has_porter and has_pest
             summary["completion_status"]["analysis_tools"] = {
@@ -573,7 +578,10 @@ class PlanService:
         if value_chain.get("primary_activities") or value_chain.get("support_activities"):
             insights.append("Se ha realizado un análisis detallado de la cadena de valor de la empresa.")
 
-        porter_complete = all(porter.get(field) for field in ["competitive_rivalry", "supplier_power", "buyer_power", "threat_substitutes", "threat_new_entrants"])
+        # Compleción de Porter basada en 4 fuerzas (sin supplier_power)
+        porter_complete = all(porter.get(field) for field in [
+            "competitive_rivalry", "buyer_power", "threat_substitutes", "threat_new_entrants"
+        ])
         if porter_complete:
             insights.append("Se completó el análisis de las 5 fuerzas de Porter para entender la competencia del sector.")
 
@@ -638,7 +646,10 @@ class PlanService:
         tools = summary.get("analysis_tools", {})
         porter = tools.get("porter_five_forces", {})
 
-        if not all(porter.get(field) for field in ["competitive_rivalry", "supplier_power", "buyer_power"]):
+        # Recomendación si faltan fuerzas principales consideradas (sin supplier_power)
+        if not all(porter.get(field) for field in [
+            "competitive_rivalry", "buyer_power", "threat_substitutes", "threat_new_entrants"
+        ]):
             recommendations.append("Completar el análisis de las fuerzas competitivas para entender mejor el posicionamiento en el mercado.")
 
         # Recomendaciones de estrategias
@@ -920,17 +931,25 @@ class PlanService:
             PlanUser.status == 'accepted'
         ).first()
 
-        if not plan_user and not require_owner:
-            # Verificar si es owner
+        # Si se requiere ser owner, verificar por owner_id directamente y devolver un PlanUser virtual
+        if require_owner:
+            if plan_user and plan_user.role == 'owner':
+                return plan_user
             plan = db.query(StrategicPlan).filter(
                 StrategicPlan.id == plan_id,
                 StrategicPlan.owner_id == user_id
             ).first()
             if plan:
-                # Crear un PlanUser virtual para owner
                 return PlanUser(plan_id=plan_id, user_id=user_id, role='owner', status='accepted')
-
-        if require_owner and (not plan_user or plan_user.role != 'owner'):
             return None
+
+        # Si no hay plan_user aceptado, permitir acceso si es owner
+        if not plan_user:
+            plan = db.query(StrategicPlan).filter(
+                StrategicPlan.id == plan_id,
+                StrategicPlan.owner_id == user_id
+            ).first()
+            if plan:
+                return PlanUser(plan_id=plan_id, user_id=user_id, role='owner', status='accepted')
 
         return plan_user

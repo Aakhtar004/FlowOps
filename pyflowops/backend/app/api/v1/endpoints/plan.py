@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.db.database import get_db
 from app.models.plan_model import User
+from app.models.plan_model import PlanUser as PlanUserModel
 from app.schemas.plan_schema import (
     StrategicPlan, StrategicPlanCreate, StrategicPlanUpdate,
     CompanyIdentity, CompanyIdentityUpdate,
@@ -280,6 +281,17 @@ async def delete_strategic_plan(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo el owner puede eliminar el plan"
+        )
+
+    # Bloquear eliminación si el plan está compartido (invitaciones pendientes o aceptadas)
+    shared_count = db.query(PlanUserModel).filter(
+        PlanUserModel.plan_id == plan_id,
+        PlanUserModel.status.in_(['pending', 'accepted'])
+    ).count()
+    if shared_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El plan está compartido con usuarios. Remueve los accesos antes de eliminar."
         )
 
     deleted = PlanService.delete_strategic_plan(db, plan_id, current_user.id)  # type: ignore
