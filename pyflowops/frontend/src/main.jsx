@@ -27,22 +27,36 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         </ErrorBoundary>
         <Toaster
           position="top-right"
+          reverseOrder={false}
           toastOptions={{
             duration: 4000,
             style: {
               background: '#363636',
               color: '#fff',
+              padding: '16px',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
             },
             success: {
               duration: 3000,
-              theme: {
-                primary: '#4aed88',
+              style: {
+                background: '#10b981',
+                color: '#fff',
+              },
+              iconTheme: {
+                primary: '#fff',
+                secondary: '#10b981',
               },
             },
             error: {
               duration: 5000,
-              theme: {
-                primary: '#f56565',
+              style: {
+                background: '#ef4444',
+                color: '#fff',
+              },
+              iconTheme: {
+                primary: '#fff',
+                secondary: '#ef4444',
               },
             },
           }}

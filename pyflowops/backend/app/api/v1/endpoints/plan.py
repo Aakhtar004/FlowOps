@@ -38,7 +38,7 @@ async def get_user_notifications(
     """
     logger = structlog.get_logger()
     try:
-        notifications = PlanService.get_user_notifications(db, current_user.id)
+        notifications = PlanService.get_user_notifications(db, current_user.id)  # type: ignore
         logger.info("Retrieved user notifications", user_id=current_user.id, count=len(notifications))
 
         # Convertir objetos SQLAlchemy a modelos Pydantic
@@ -71,7 +71,7 @@ async def mark_notification_read(
    """
    Marcar notificación como leída.
    """
-   success = PlanService.mark_notification_read(db, notification_id, current_user.id)
+   success = PlanService.mark_notification_read(db, notification_id, current_user.id)  # type: ignore
    if not success:
        raise HTTPException(
            status_code=status.HTTP_404_NOT_FOUND,
@@ -91,7 +91,7 @@ async def get_owned_plans(
     """
     logger = structlog.get_logger()
     try:
-        plans = PlanService.get_owned_plans(db, current_user.id)
+        plans = PlanService.get_owned_plans(db, current_user.id)  # type: ignore
         logger.info("Retrieved owned plans", user_id=current_user.id, count=len(plans))
 
         # Convert to StrategicPlan models with proper datetime handling
@@ -131,7 +131,7 @@ async def get_shared_plans(
     """
     logger = structlog.get_logger()
     try:
-        plans = PlanService.get_shared_plans(db, current_user.id)
+        plans = PlanService.get_shared_plans(db, current_user.id)  # type: ignore
         logger.info("Retrieved shared plans", user_id=current_user.id, count=len(plans))
 
         # Log details of each plan for debugging
@@ -223,7 +223,7 @@ async def get_strategic_plan(
     Obtener un plan estratégico específico.
     """
     # Verificar acceso (owner o member accepted)
-    access = PlanService.check_plan_access(db, plan_id, current_user.id)
+    access = PlanService.check_plan_access(db, plan_id, current_user.id)  # type: ignore
     if not access:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -250,7 +250,7 @@ async def update_strategic_plan(
     Actualizar un plan estratégico (owner o colaborador aceptado).
     """
     # Verificar acceso (owner o colaborador aceptado)
-    access = PlanService.check_plan_access(db, plan_id, current_user.id)
+    access = PlanService.check_plan_access(db, plan_id, current_user.id)  # type: ignore
     if not access:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -276,7 +276,7 @@ async def delete_strategic_plan(
     Eliminar un plan estratégico (solo owner).
     """
     # Verificar que sea owner
-    access = PlanService.check_plan_access(db, plan_id, current_user.id, require_owner=True)
+    access = PlanService.check_plan_access(db, plan_id, current_user.id, require_owner=True)  # type: ignore
     if not access:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -315,7 +315,7 @@ async def update_company_identity(
     Crear o actualizar la identidad de la empresa.
     """
     # Verificar acceso (owner o member accepted)
-    access = PlanService.check_plan_access(db, plan_id, current_user.id)
+    access = PlanService.check_plan_access(db, plan_id, current_user.id)  # type: ignore
     if not access:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -325,7 +325,7 @@ async def update_company_identity(
     logger = structlog.get_logger()
     logger.info("Updating company identity", plan_id=plan_id, user_id=current_user.id)
     try:
-        identity = PlanService.create_or_update_company_identity(db, plan_id, current_user.id, identity_data)  # type: ignore
+        identity = PlanService.create_or_update_company_identity(db, plan_id, current_user.id, identity_data)  # type: ignore  # type: ignore
         if not identity:
             logger.warning("Plan not found for company identity update", plan_id=plan_id)
             raise HTTPException(
@@ -353,7 +353,7 @@ async def get_company_identity(
     """
     try:
         # Verificar acceso
-        access = PlanService.check_plan_access(db, plan_id, current_user.id)
+        access = PlanService.check_plan_access(db, plan_id, current_user.id)  # type: ignore
         if not access:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -411,7 +411,7 @@ async def update_strategic_analysis(
     Crear o actualizar el análisis estratégico.
     """
     # Verificar acceso
-    access = PlanService.check_plan_access(db, plan_id, current_user.id)
+    access = PlanService.check_plan_access(db, plan_id, current_user.id)  # type: ignore
     if not access:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -438,7 +438,7 @@ async def get_strategic_analysis(
     """
     try:
         # Verificar acceso
-        access = PlanService.check_plan_access(db, plan_id, current_user.id)
+        access = PlanService.check_plan_access(db, plan_id, current_user.id)  # type: ignore
         if not access:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -494,13 +494,13 @@ async def update_analysis_tools(
     Crear o actualizar las herramientas de análisis.
     """
     # Verificar acceso (owner o colaborador aceptado)
-    access = PlanService.check_plan_access(db, plan_id, current_user.id)
+    access = PlanService.check_plan_access(db, plan_id, current_user.id)  # type: ignore
     if not access:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes acceso a este plan"
         )
-    tools = PlanService.create_or_update_analysis_tools(db, plan_id, current_user.id, tools_data)  # type: ignore
+    tools = PlanService.create_or_update_analysis_tools(db, plan_id, current_user.id, tools_data)  # type: ignore  # type: ignore
     if not tools:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -520,7 +520,7 @@ async def get_analysis_tools(
     """
     try:
         # Verificar acceso
-        access = PlanService.check_plan_access(db, plan_id, current_user.id)
+        access = PlanService.check_plan_access(db, plan_id, current_user.id)  # type: ignore
         if not access:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -592,13 +592,13 @@ async def update_strategies(
     Crear o actualizar las estrategias.
     """
     # Verificar acceso (owner o colaborador aceptado)
-    access = PlanService.check_plan_access(db, plan_id, current_user.id)
+    access = PlanService.check_plan_access(db, plan_id, current_user.id)  # type: ignore
     if not access:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes acceso a este plan"
         )
-    strategies = PlanService.create_or_update_strategies(db, plan_id, current_user.id, strategies_data)  # type: ignore
+    strategies = PlanService.create_or_update_strategies(db, plan_id, current_user.id, strategies_data)  # type: ignore  # type: ignore
     if not strategies:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -618,7 +618,7 @@ async def get_strategies(
     """
     try:
         # Verificar acceso
-        access = PlanService.check_plan_access(db, plan_id, current_user.id)
+        access = PlanService.check_plan_access(db, plan_id, current_user.id)  # type: ignore
         if not access:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -677,7 +677,7 @@ async def get_executive_summary(
     Generar y obtener el resumen ejecutivo del plan estratégico.
     """
     # Verificar acceso
-    access = PlanService.check_plan_access(db, plan_id, current_user.id)
+    access = PlanService.check_plan_access(db, plan_id, current_user.id)  # type: ignore
     if not access:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -705,7 +705,7 @@ async def update_plan_identity(
     Actualizar la identidad empresarial con formato simplificado.
     """
     # Verificar acceso
-    access = PlanService.check_plan_access(db, plan_id, current_user.id)
+    access = PlanService.check_plan_access(db, plan_id, current_user.id)  # type: ignore
     if not access:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -727,7 +727,7 @@ async def update_plan_identity(
             mission=identity_data.mission,
             vision=identity_data.vision,
             values=values_list,
-            general_objectives=general_objectives_list
+            general_objectives=general_objectives_list  # type: ignore
         )
 
         # Llamar al servicio real
@@ -760,7 +760,7 @@ async def update_plan_swot(
     Actualizar el análisis SWOT con formato simplificado.
     """
     # Verificar acceso
-    access = PlanService.check_plan_access(db, plan_id, current_user.id)
+    access = PlanService.check_plan_access(db, plan_id, current_user.id)  # type: ignore
     if not access:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -812,7 +812,7 @@ async def update_plan_tools(
     Actualizar las herramientas de análisis con formato simplificado.
     """
     # Verificar acceso
-    access = PlanService.check_plan_access(db, plan_id, current_user.id)
+    access = PlanService.check_plan_access(db, plan_id, current_user.id)  # type: ignore
     if not access:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -842,15 +842,15 @@ async def update_plan_tools(
             value_chain_primary=value_chain_primary,
             value_chain_support={},  # No especificado en el request simplificado
             participation_matrix=participation_matrix,
-            porter_competitive_rivalry=porter_data.get('competitive_rivalry') or (tools_data.porter_forces if isinstance(porter_data, str) else None),
-            porter_supplier_power=porter_data.get('supplier_power'),
-            porter_buyer_power=porter_data.get('buyer_power'),
-            porter_threat_substitutes=porter_data.get('threat_substitutes'),
-            porter_threat_new_entrants=porter_data.get('threat_new_entrants'),
-            pest_political=pest_data.get('political'),
-            pest_economic=pest_data.get('economic'),
-            pest_social=pest_data.get('social'),
-            pest_technological=pest_data.get('technological')
+            porter_competitive_rivalry=porter_data.get('competitive_rivalry') if isinstance(porter_data, dict) else (tools_data.porter_forces if isinstance(porter_data, str) else None),
+            porter_supplier_power=porter_data.get('supplier_power') if isinstance(porter_data, dict) else None,
+            porter_buyer_power=porter_data.get('buyer_power') if isinstance(porter_data, dict) else None,
+            porter_threat_substitutes=porter_data.get('threat_substitutes') if isinstance(porter_data, dict) else None,
+            porter_threat_new_entrants=porter_data.get('threat_new_entrants') if isinstance(porter_data, dict) else None,
+            pest_political=pest_data.get('political') if isinstance(pest_data, dict) else None,
+            pest_economic=pest_data.get('economic') if isinstance(pest_data, dict) else None,
+            pest_social=pest_data.get('social') if isinstance(pest_data, dict) else None,
+            pest_technological=pest_data.get('technological') if isinstance(pest_data, dict) else None
         )
 
         # Llamar al servicio real
@@ -883,7 +883,7 @@ async def update_plan_strategies(
     Actualizar las estrategias con formato simplificado.
     """
     # Verificar acceso
-    access = PlanService.check_plan_access(db, plan_id, current_user.id)
+    access = PlanService.check_plan_access(db, plan_id, current_user.id)  # type: ignore
     if not access:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -906,9 +906,9 @@ async def update_plan_strategies(
         # Parsear game_matrix
         game_data = safe_parse_json(strategies_data.game_matrix) if strategies_data.game_matrix else {}
         game_growth = game_data.get('growth', []) if isinstance(game_data, dict) else ([strategies_data.game_matrix] if strategies_data.game_matrix else None)
-        game_avoid = game_data.get('avoid', [])
-        game_merge = game_data.get('merge', [])
-        game_exit = game_data.get('exit', [])
+        game_avoid = game_data.get('avoid', []) if isinstance(game_data, dict) else None
+        game_merge = game_data.get('merge', []) if isinstance(game_data, dict) else None
+        game_exit = game_data.get('exit', []) if isinstance(game_data, dict) else None
 
         # Parsear implementation_timeline
         implementation_timeline = safe_parse_json(strategies_data.implementation_timeline) if strategies_data.implementation_timeline else None
@@ -919,10 +919,10 @@ async def update_plan_strategies(
         # Crear el objeto StrategiesUpdate
         update_data = StrategiesUpdate(
             strategy_identification=strategy_identification,
-            game_growth=game_growth,
-            game_avoid=game_avoid,
-            game_merge=game_merge,
-            game_exit=game_exit,
+            game_growth=game_growth if isinstance(game_growth, list) or game_growth is None else [game_growth],
+            game_avoid=game_avoid if isinstance(game_avoid, list) or game_avoid is None else [game_avoid] if game_avoid else None,
+            game_merge=game_merge if isinstance(game_merge, list) or game_merge is None else [game_merge] if game_merge else None,
+            game_exit=game_exit if isinstance(game_exit, list) or game_exit is None else [game_exit] if game_exit else None,
             priority_strategies=priority_strategies,
             implementation_timeline=implementation_timeline
         )
@@ -958,7 +958,7 @@ async def invite_user_to_plan(
    Invitar a un usuario a un plan por email.
    """
    try:
-       invitation = PlanService.invite_user_to_plan(db, plan_id, current_user.id, invite_data.email)
+       invitation = PlanService.invite_user_to_plan(db, plan_id, current_user.id, invite_data.email)  # type: ignore
        if not invitation:
            raise HTTPException(
                status_code=status.HTTP_400_BAD_REQUEST,
@@ -966,7 +966,7 @@ async def invite_user_to_plan(
            )
        return InvitationResponse(
            message="Invitación enviada correctamente",
-           invitation_id=invitation.id
+           invitation_id=invitation.id  # type: ignore
        )
    except Exception as e:
        raise HTTPException(
@@ -985,7 +985,7 @@ async def accept_invitation(
    """
    Aceptar invitación a un plan.
    """
-   success = PlanService.respond_to_invitation(db, invitation_id, current_user.id, accept=True)
+   success = PlanService.respond_to_invitation(db, invitation_id, current_user.id, accept=True)  # type: ignore
    if not success:
        raise HTTPException(
            status_code=status.HTTP_404_NOT_FOUND,
@@ -1004,7 +1004,7 @@ async def reject_invitation(
    """
    Rechazar invitación a un plan.
    """
-   success = PlanService.respond_to_invitation(db, invitation_id, current_user.id, accept=False)
+   success = PlanService.respond_to_invitation(db, invitation_id, current_user.id, accept=False)  # type: ignore
    if not success:
        raise HTTPException(
            status_code=status.HTTP_404_NOT_FOUND,
@@ -1024,13 +1024,13 @@ async def get_plan_users(
    """
    # Verificar que el usuario sea owner
    plan = PlanService.get_strategic_plan(db, plan_id)
-   if not plan or plan.owner_id != current_user.id:
+   if not plan or plan.owner_id != current_user.id:  # type: ignore
        raise HTTPException(
            status_code=status.HTTP_403_FORBIDDEN,
            detail="No tienes permisos para ver los usuarios de este plan"
        )
 
-   plan_users = PlanService.get_plan_users(db, plan_id, current_user.id)
+   plan_users = PlanService.get_plan_users(db, plan_id, current_user.id)  # type: ignore
    # Cargar datos de usuario para cada plan_user
    result = []
    for pu in plan_users:
@@ -1048,7 +1048,7 @@ async def remove_user_from_plan(
    """
    Remover usuario de un plan (solo owner).
    """
-   success = PlanService.remove_user_from_plan(db, plan_id, current_user.id, user_id)
+   success = PlanService.remove_user_from_plan(db, plan_id, current_user.id, user_id)  # type: ignore
    if not success:
        raise HTTPException(
            status_code=status.HTTP_404_NOT_FOUND,

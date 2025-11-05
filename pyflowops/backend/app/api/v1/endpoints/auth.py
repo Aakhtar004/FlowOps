@@ -38,13 +38,27 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verificar contraseña."""
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verificar contraseña.
+    
+    Nota: bcrypt tiene un límite de 72 bytes (no caracteres).
+    Truncamos por bytes para evitar problemas con UTF-8.
+    """
+    # Truncar password al límite de 72 bytes para consistencia
+    # Usamos encode para contar bytes reales, no caracteres
+    truncated_password = plain_password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
+    return pwd_context.verify(truncated_password, hashed_password)  # type: ignore
 
 
 def get_password_hash(password: str) -> str:
-    """Obtener hash de contraseña."""
-    return pwd_context.hash(password)
+    """Obtener hash de contraseña.
+    
+    Nota: bcrypt tiene un límite de 72 bytes (no caracteres).
+    Truncamos por bytes para evitar ValueError.
+    """
+    # Truncar password al límite de 72 bytes (no caracteres)
+    # Usamos encode para contar bytes reales, no caracteres
+    truncated_password = password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
+    return pwd_context.hash(truncated_password)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
@@ -89,7 +103,7 @@ def authenticate_user(db: Session, username: str, password: str) -> User:
     if not user:
         logger.warning("User not found during authentication", username=username)
         raise UserNotFoundError("Este usuario no se encuentra registrado")
-    verified = verify_password(password, user.hashed_password)
+    verified = verify_password(password, user.hashed_password)  # type: ignore
     if not verified:
         logger.warning("Invalid password for user", username=username)
         raise InvalidPasswordError("La contraseña es incorrecta")
@@ -127,7 +141,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
     """Obtener usuario actual activo."""
-    if not current_user.is_active:
+    if not current_user.is_active:  # type: ignore
         raise HTTPException(status_code=400, detail="Usuario inactivo")
     return current_user
 
