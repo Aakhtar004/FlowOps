@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     WEBSOCKET_RATE_LIMIT_PER_MINUTE: int = 60
     
     # Configuración de CORS
-    CORS_ORIGINS: str = "http://frontend:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:8000,https://j7j1tg9h-3000.brs.devtunnels.ms"
+    CORS_ORIGINS: str = "*"
 
     # Usuarios iniciales de seeding (formato: "user:email:pass[:full][:is_superuser];...")
     INITIAL_USERS: str = ""

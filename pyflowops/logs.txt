@@ -1,0 +1,206 @@
+useStrategies called with planId: 19
+6
+useApi.js:301 useAnalysisTools called with planId: 19
+dashboard:1 Access to XMLHttpRequest at 'http://127.0.0.1:8000/api/v1/plans/3' from origin 'http://localhost:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+react-query.js?v=28e7b358:1242 
+AxiosError
+code
+: 
+"ERR_NETWORK"
+config
+: 
+{transitional: {…}, adapter: Array(3), transformRequest: Array(1), transformResponse: Array(1), timeout: 30000, …}
+event
+: 
+ProgressEvent {isTrusted: true, lengthComputable: false, loaded: 0, total: 0, type: 'error', …}
+message
+: 
+"Network Error"
+name
+: 
+"AxiosError"
+request
+: 
+XMLHttpRequest {onreadystatechange: null, readyState: 4, timeout: 30000, withCredentials: false, upload: XMLHttpRequestUpload, …}
+stack
+: 
+"AxiosError: Network Error\n    at XMLHttpRequest.handleError (http://localhost:3000/node_modules/.vite/deps/axios.js?v=28e7b358:1624:19)\n    at Axios.request (http://localhost:3000/node_modules/.vite/deps/axios.js?v=28e7b358:2201:41)\n    at async Object.delete [as mutationFn] (http://localhost:3000/src/services/api.js:232:22)"
+[[Prototype]]
+: 
+Error
+useApi.js:172 Error al eliminar plan: 
+AxiosError
+onError	@	useApi.js:172
+127.0.0.1:8000/api/v1/plans/3:1 
+ Failed to load resource: net::ERR_FAILED
+dashboard:1 Access to XMLHttpRequest at 'http://127.0.0.1:8000/api/v1/plans/3' from origin 'http://localhost:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+Dashboard.jsx:107 
+AxiosError {message: 'Network Error', name: 'AxiosError', code: 'ERR_NETWORK', config: {…}, request: XMLHttpRequest, …}
+useApi.js:172 Error al eliminar plan: 
+AxiosError {message: 'Network Error', name: 'AxiosError', code: 'ERR_NETWORK', config: {…}, request: XMLHttpRequest, …}
+api.js:232 
+ DELETE http://127.0.0.1:8000/api/v1/plans/3 net::ERR_FAILED 500 (Internal Server Error)
+dashboard:1 Access to XMLHttpRequest at 'http://127.0.0.1:8000/api/v1/plans/3' from origin 'http://localhost:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+Dashboard.jsx:107 
+AxiosError {message: 'Network Error', name: 'AxiosError', code: 'ERR_NETWORK', config: {…}, request: XMLHttpRequest, …}
+useApi.js:172 Error al eliminar plan: 
+AxiosError {message: 'Network Error', name: 'AxiosError', code: 'ERR_NETWORK', config: {…}, request: XMLHttpRequest, …}
+api.js:232 
+ DELETE http://127.0.0.1:8000/api/v1/plans/3 net::ERR_FAILED 500 (Internal Server Error)
+
+
+Logs del servicio de backend:
+2025-11-06 18:38:32.067 | 2025-11-06 23:38:32,067 INFO sqlalchemy.engine.Engine [generated in 0.00027s] {'strategic_plan_id': None, 'analysis_tools_id': 4}
+2025-11-06 18:38:32.067 | {"level": "INFO", "logger": "sqlalchemy.engine.Engine", "message": "[generated in 0.00027s] {'strategic_plan_id': None, 'analysis_tools_id': 4}", "timestamp": "1762472312.0674224"}
+2025-11-06 18:38:32.075 | 2025-11-06 23:38:32,075 INFO sqlalchemy.engine.Engine ROLLBACK
+2025-11-06 18:38:32.075 | {"level": "INFO", "logger": "sqlalchemy.engine.Engine", "message": "ROLLBACK", "timestamp": "1762472312.0752697"}
+2025-11-06 18:38:32.077 | INFO:     172.19.0.1:52776 - "DELETE /api/v1/plans/19 HTTP/1.1" 500 Internal Server Error
+2025-11-06 18:38:32.154 | ERROR:    Exception in ASGI application
+2025-11-06 18:38:32.154 | Traceback (most recent call last):
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+2025-11-06 18:38:32.154 |     self.dialect.do_execute(
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 941, in do_execute
+2025-11-06 18:38:32.154 |     cursor.execute(statement, parameters)
+2025-11-06 18:38:32.154 | psycopg2.errors.NotNullViolation: null value in column "strategic_plan_id" of relation "analysis_tools" violates not-null constraint
+2025-11-06 18:38:32.154 | DETAIL:  Failing row contains (4, null, {}, {"reflection": "", "strengths": ["awdawd", "awdawdawd", "awdawda..., null, null, null, null, null, null, null, null, null, null, {"productos": [{"nombre": "Producto 1", "color": "#FF6B6B"}, {"n..., 2025-11-06 23:12:58.583585+00, 2025-11-06 23:38:32.024366+00).
+2025-11-06 18:38:32.154 | 
+2025-11-06 18:38:32.154 | 
+2025-11-06 18:38:32.154 | The above exception was the direct cause of the following exception:
+2025-11-06 18:38:32.154 | 
+2025-11-06 18:38:32.154 | Traceback (most recent call last):
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/httptools_impl.py", line 426, in run_asgi
+2025-11-06 18:38:32.154 |     result = await app(  # type: ignore[func-returns-value]
+2025-11-06 18:38:32.154 |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 84, in __call__
+2025-11-06 18:38:32.154 |     return await self.app(scope, receive, send)
+2025-11-06 18:38:32.154 |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1106, in __call__
+2025-11-06 18:38:32.154 |     await super().__call__(scope, receive, send)
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 122, in __call__
+2025-11-06 18:38:32.154 |     await self.middleware_stack(scope, receive, send)
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 184, in __call__
+2025-11-06 18:38:32.154 |     raise exc
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 162, in __call__
+2025-11-06 18:38:32.154 |     await self.app(scope, receive, _send)
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 108, in __call__
+2025-11-06 18:38:32.154 |     response = await self.dispatch_func(request, call_next)
+2025-11-06 18:38:32.154 |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-11-06 18:38:32.154 |   File "/app/app/core/metrics.py", line 40, in dispatch
+2025-11-06 18:38:32.154 |     response = await call_next(request)
+2025-11-06 18:38:32.154 |                ^^^^^^^^^^^^^^^^^^^^^^^^
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 84, in call_next
+2025-11-06 18:38:32.154 |     raise app_exc
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 70, in coro
+2025-11-06 18:38:32.154 |     await self.app(scope, receive_or_disconnect, send_no_error)
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 108, in __call__
+2025-11-06 18:38:32.154 |     response = await self.dispatch_func(request, call_next)
+2025-11-06 18:38:32.154 |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-11-06 18:38:32.154 |   File "/app/app/middleware/request_id.py", line 24, in dispatch
+2025-11-06 18:38:32.154 |     response = await call_next(request)
+2025-11-06 18:38:32.154 |                ^^^^^^^^^^^^^^^^^^^^^^^^
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 84, in call_next
+2025-11-06 18:38:32.154 |     raise app_exc
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 70, in coro
+2025-11-06 18:38:32.154 |     await self.app(scope, receive_or_disconnect, send_no_error)
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 91, in __call__
+2025-11-06 18:38:32.154 |     await self.simple_response(scope, receive, send, request_headers=headers)
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 146, in simple_response
+2025-11-06 18:38:32.154 |     await self.app(scope, receive, send)
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 79, in __call__
+2025-11-06 18:38:32.154 |     raise exc
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 68, in __call__
+2025-11-06 18:38:32.154 |     await self.app(scope, receive, sender)
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 20, in __call__
+2025-11-06 18:38:32.154 |     raise e
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 17, in __call__
+2025-11-06 18:38:32.154 |     await self.app(scope, receive, send)
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 718, in __call__
+2025-11-06 18:38:32.154 |     await route.handle(scope, receive, send)
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 276, in handle
+2025-11-06 18:38:32.154 |     await self.app(scope, receive, send)
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 66, in app
+2025-11-06 18:38:32.154 |     response = await func(request)
+2025-11-06 18:38:32.154 |                ^^^^^^^^^^^^^^^^^^^
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 274, in app
+2025-11-06 18:38:32.154 |     raw_response = await run_endpoint_function(
+2025-11-06 18:38:32.154 |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+2025-11-06 18:38:32.154 |     return await dependant.call(**values)
+2025-11-06 18:38:32.154 |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-11-06 18:38:32.154 |   File "/app/app/api/v1/endpoints/plan.py", line 297, in delete_strategic_plan
+2025-11-06 18:38:32.154 |     deleted = PlanService.delete_strategic_plan(db, plan_id, current_user.id)  # type: ignore
+2025-11-06 18:38:32.154 |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-11-06 18:38:32.154 |   File "/app/app/services/plan_service.py", line 94, in delete_strategic_plan
+2025-11-06 18:38:32.154 |     with transaction(db):
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/contextlib.py", line 144, in __exit__
+2025-11-06 18:38:32.154 |     next(self.gen)
+2025-11-06 18:38:32.154 |   File "/app/app/db/database.py", line 68, in transaction
+2025-11-06 18:38:32.154 |     raise e
+2025-11-06 18:38:32.154 |   File "/app/app/db/database.py", line 65, in transaction
+2025-11-06 18:38:32.154 |     db.commit()
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2028, in commit
+2025-11-06 18:38:32.154 |     trans.commit(_to_root=True)
+2025-11-06 18:38:32.154 |   File "<string>", line 2, in commit
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+2025-11-06 18:38:32.154 |     ret_value = fn(self, *arg, **kw)
+2025-11-06 18:38:32.154 |                 ^^^^^^^^^^^^^^^^^^^^
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1313, in commit
+2025-11-06 18:38:32.154 |     self._prepare_impl()
+2025-11-06 18:38:32.154 |   File "<string>", line 2, in _prepare_impl
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+2025-11-06 18:38:32.154 |     ret_value = fn(self, *arg, **kw)
+2025-11-06 18:38:32.154 |                 ^^^^^^^^^^^^^^^^^^^^
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1288, in _prepare_impl
+2025-11-06 18:38:32.154 |     self.session.flush()
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4352, in flush
+2025-11-06 18:38:32.154 |     self._flush(objects)
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4487, in _flush
+2025-11-06 18:38:32.154 |     with util.safe_reraise():
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+2025-11-06 18:38:32.154 |     raise exc_value.with_traceback(exc_tb)
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4448, in _flush
+2025-11-06 18:38:32.154 |     flush_context.execute()
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py", line 466, in execute
+2025-11-06 18:38:32.154 |     rec.execute(self)
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py", line 642, in execute
+2025-11-06 18:38:32.154 |     util.preloaded.orm_persistence.save_obj(
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/persistence.py", line 85, in save_obj
+2025-11-06 18:38:32.154 |     _emit_update_statements(
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/persistence.py", line 912, in _emit_update_statements
+2025-11-06 18:38:32.154 |     c = connection.execute(
+2025-11-06 18:38:32.154 |         ^^^^^^^^^^^^^^^^^^^
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1418, in execute
+2025-11-06 18:38:32.154 |     return meth(
+2025-11-06 18:38:32.154 |            ^^^^^
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 515, in _execute_on_connection
+2025-11-06 18:38:32.154 |     return connection._execute_clauseelement(
+2025-11-06 18:38:32.154 |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1640, in _execute_clauseelement
+2025-11-06 18:38:32.154 |     ret = self._execute_context(
+2025-11-06 18:38:32.154 |           ^^^^^^^^^^^^^^^^^^^^^^
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+2025-11-06 18:38:32.154 |     return self._exec_single_context(
+2025-11-06 18:38:32.154 |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+2025-11-06 18:38:32.154 |     self._handle_dbapi_exception(
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+2025-11-06 18:38:32.154 |     raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+2025-11-06 18:38:32.154 |     self.dialect.do_execute(
+2025-11-06 18:38:32.154 |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 941, in do_execute
+2025-11-06 18:38:32.154 |     cursor.execute(statement, parameters)
+2025-11-06 18:38:32.154 | sqlalchemy.exc.IntegrityError: (psycopg2.errors.NotNullViolation) null value in column "strategic_plan_id" of relation "analysis_tools" violates not-null constraint
+2025-11-06 18:38:32.154 | DETAIL:  Failing row contains (4, null, {}, {"reflection": "", "strengths": ["awdawd", "awdawdawd", "awdawda..., null, null, null, null, null, null, null, null, null, null, {"productos": [{"nombre": "Producto 1", "color": "#FF6B6B"}, {"n..., 2025-11-06 23:12:58.583585+00, 2025-11-06 23:38:32.024366+00).
+2025-11-06 18:38:32.154 | 
+2025-11-06 18:38:32.154 | [SQL: UPDATE analysis_tools SET strategic_plan_id=%(strategic_plan_id)s, updated_at=now() WHERE analysis_tools.id = %(analysis_tools_id)s]
+2025-11-06 18:38:32.154 | [parameters: {'strategic_plan_id': None, 'analysis_tools_id': 4}]
+2025-11-06 18:38:32.154 | (Background on this error at: https://sqlalche.me/e/20/gkpj)
+2025-11-06 18:38:33.687 | {"user_id": 4, "event": "Querying user by id", "request_id": "d92894d9-d541-4d9a-81cc-cc5993f29c84", "level": "info", "timestamp": "2025-11-06T23:38:33.687277Z"}
+2025-11-06 18:38:33.688 | 2025-11-06 23:38:33,688 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2025-11-06 18:38:33.688 | {"level": "INFO", "logger": "sqlalchemy.engine.Engine", "message": "BEGIN (implicit)", "timestamp": "1762472313.6885269"}
+2025-11-06 18:38:33.689 | 2025-11-06 23:38:33,689 INFO sqlalchemy.engine.Engine SELECT users.id AS users_id, users.username AS users_username, users.email AS users_email, users.hashed_password AS users_hashed_password, users.full_name AS users_full_name, users.is_active AS users_is_active, users.is_superuser AS users_is_superuser, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+2025-11-06 18:38:33.689 | FROM users 
+2025-11-06 18:38:33.689 | WHERE users.id = %(id_1)s 
+2025-11-06 18:38:33.689 |  LIMIT %(param_1)s
+2025-11-06 18:38:33.689 | {"level": "INFO", "logger": "sqlalchemy.engine.Engine", "message": "SELECT users.id AS users_id, users.username AS users_username, users.email AS users_email, users.hashed_password AS users_hashed_password, users.full_name AS users_full_name, users.is_active AS users_is_active, users.is_superuser AS users_is_superuser, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+2025-11-06 18:38:33.689 | FROM users 

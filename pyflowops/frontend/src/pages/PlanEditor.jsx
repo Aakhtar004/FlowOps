@@ -27,6 +27,10 @@ const PlanEditor = () => {
   const { strategies, error: strategiesError } = useStrategies(planId)
   const { success, error: showError } = useToast()
 
+  // Calcular el número de fortalezas y debilidades de la cadena de valor
+  const strengthsCount = tools?.value_chain_support?.strengths?.length || 0
+  const weaknessesCount = tools?.value_chain_support?.weaknesses?.length || 0
+
   // Determinar la pestaña activa basada en la URL
   const getActiveTab = () => {
     const path = location.pathname
@@ -167,7 +171,8 @@ const PlanEditor = () => {
       title: 'Matriz de Crecimiento-Participación BCG',
       path: `/plan/${planId}/bcg-matrix`,
       icon: BarChart3,
-      component: BCGMatrixEditor
+      component: BCGMatrixEditor,
+      props: { strengthsCount, weaknessesCount } // Pasar props al componente
     },
     {
       id: 'porter',

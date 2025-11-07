@@ -51,12 +51,12 @@ class StrategicPlan(Base):
 
     # Relaciones
     owner = relationship("User", back_populates="strategic_plans", lazy='select')
-    plan_users = relationship("PlanUser", back_populates="plan", lazy='select')
-    notifications = relationship("Notification", back_populates="related_plan", lazy='select')
-    company_identity = relationship("CompanyIdentity", back_populates="strategic_plan", uselist=False, lazy='select')
-    strategic_analysis = relationship("StrategicAnalysis", back_populates="strategic_plan", uselist=False, lazy='select')
-    analysis_tools = relationship("AnalysisTools", back_populates="strategic_plan", uselist=False, lazy='select')
-    strategies = relationship("Strategies", back_populates="strategic_plan", uselist=False, lazy='select')
+    plan_users = relationship("PlanUser", back_populates="plan", lazy='select', cascade="all, delete-orphan")
+    notifications = relationship("Notification", back_populates="related_plan", lazy='select', cascade="all, delete-orphan")
+    company_identity = relationship("CompanyIdentity", back_populates="strategic_plan", uselist=False, lazy='select', cascade="all, delete-orphan")
+    strategic_analysis = relationship("StrategicAnalysis", back_populates="strategic_plan", uselist=False, lazy='select', cascade="all, delete-orphan")
+    analysis_tools = relationship("AnalysisTools", back_populates="strategic_plan", uselist=False, lazy='select', cascade="all, delete-orphan")
+    strategies = relationship("Strategies", back_populates="strategic_plan", uselist=False, lazy='select', cascade="all, delete-orphan")
 
 
 class CompanyIdentity(Base):

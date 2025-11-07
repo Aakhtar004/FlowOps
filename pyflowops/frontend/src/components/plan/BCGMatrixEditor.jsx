@@ -4,7 +4,7 @@ import LoadingSpinner from '../common/LoadingSpinner'
 import { useToast } from '../ui/Toast'
 import { useAnalysisTools } from '../../hooks/useApi'
 
-const BCGMatrixEditor = ({ planId, onSave }) => {
+const BCGMatrixEditor = ({ planId, onSave, strengthsCount = 0, weaknessesCount = 0 }) => {
   const { success, error: showError } = useToast()
   const { tools: toolsData, isLoading: dataLoading, updateTools } = useAnalysisTools(planId)
 
@@ -817,13 +817,13 @@ const BCGMatrixEditor = ({ planId, onSave }) => {
               <div className="space-y-2">
                 {fortalezas.map((fortaleza, index) => (
                   <div key={index} className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-gray-600 w-8">F{index + 1}</span>
+                    <span className="text-sm font-medium text-gray-600 w-8">F{strengthsCount + index + 1}</span>
                     <input
                       type="text"
                       value={fortaleza}
                       onChange={(e) => actualizarFortaleza(index, e.target.value)}
                       className="input flex-1"
-                      placeholder={`Fortaleza ${index + 1}`}
+                      placeholder={`Fortaleza ${strengthsCount + index + 1}`}
                     />
                     {fortalezas.length > 2 && (
                       <button
@@ -853,13 +853,13 @@ const BCGMatrixEditor = ({ planId, onSave }) => {
               <div className="space-y-2">
                 {debilidades.map((debilidad, index) => (
                   <div key={index} className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-gray-600 w-8">D{index + 1}</span>
+                    <span className="text-sm font-medium text-gray-600 w-8">D{weaknessesCount + index + 1}</span>
                     <input
                       type="text"
                       value={debilidad}
                       onChange={(e) => actualizarDebilidad(index, e.target.value)}
                       className="input flex-1"
-                      placeholder={`Debilidad ${index + 1}`}
+                      placeholder={`Debilidad ${weaknessesCount + index + 1}`}
                     />
                     {debilidades.length > 2 && (
                       <button

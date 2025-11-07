@@ -60,15 +60,18 @@ const ResumenPage = () => {
     }
   }
 
-  // Fusionar fortalezas/debilidades del FODA y de Cadena de Valor
-  const mergedStrengths = [
+  // Fusionar fortalezas y debilidades de todas las fuentes
+  const strengths = [
     ...(analysis?.internal_strengths || []),
-    ...(tools?.value_chain_support?.strengths || [])
-  ]
-  const mergedWeaknesses = [
+    ...(tools?.value_chain_support?.strengths || []),
+    ...(tools?.bcg_matrix_data?.fortalezas || [])
+  ].filter(s => s.trim() !== '')
+
+  const weaknesses = [
     ...(analysis?.internal_weaknesses || []),
-    ...(tools?.value_chain_support?.weaknesses || [])
-  ]
+    ...(tools?.value_chain_support?.weaknesses || []),
+    ...(tools?.bcg_matrix_data?.debilidades || [])
+  ].filter(w => w.trim() !== '')
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -249,13 +252,13 @@ const ResumenPage = () => {
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6 border border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Análisis FODA</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {mergedStrengths.length > 0 && (
+              {strengths.length > 0 && (
                 <div className="border-l-4 border-green-500 pl-4">
                   <h3 className="text-lg font-semibold text-green-700 mb-3">Fortalezas</h3>
                   <ul className="space-y-2">
-                    {mergedStrengths.map((strength, index) => (
+                    {strengths.map((strength, index) => (
                       <li key={index} className="flex items-start">
-                        <span className="text-green-500 mr-2 mt-1">✓</span>
+                        <span className="font-bold text-green-700 mr-2">F{index + 1}:</span>
                         <span className="text-gray-700 text-sm">{strength}</span>
                       </li>
                     ))}
@@ -275,13 +278,13 @@ const ResumenPage = () => {
                   </ul>
                 </div>
               )}
-              {mergedWeaknesses.length > 0 && (
+              {weaknesses.length > 0 && (
                 <div className="border-l-4 border-orange-500 pl-4">
                   <h3 className="text-lg font-semibold text-orange-700 mb-3">Debilidades</h3>
                   <ul className="space-y-2">
-                    {mergedWeaknesses.map((weakness, index) => (
+                    {weaknesses.map((weakness, index) => (
                       <li key={index} className="flex items-start">
-                        <span className="text-orange-500 mr-2 mt-1">⚠</span>
+                        <span className="font-bold text-orange-700 mr-2">D{index + 1}:</span>
                         <span className="text-gray-700 text-sm">{weakness}</span>
                       </li>
                     ))}

@@ -208,13 +208,16 @@ const ValueChainEditor = ({ planId, onSave }) => {
 
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <h4 className="text-lg font-medium text-green-700 mb-3">FORTALEZAS</h4>
-              <div className="space-y-2">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-lg font-semibold text-gray-800">Fortalezas</h4>
+                <button onClick={addStrength} className="btn-secondary btn-sm">
+                  <Plus className="h-4 w-4 mr-1" /> Añadir
+                </button>
+              </div>
+              <ul className="space-y-2">
                 {strengths.map((strength, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-green-600 w-8">
-                      F{index + 1}
-                    </span>
+                  <li key={index} className="flex items-center space-x-2">
+                    <span className="font-semibold text-gray-600">F{index + 1}:</span>
                     <input
                       type="text"
                       value={strength}
@@ -230,26 +233,22 @@ const ValueChainEditor = ({ planId, onSave }) => {
                         <Minus className="h-4 w-4" />
                       </button>
                     )}
-                  </div>
+                  </li>
                 ))}
-                <button
-                  onClick={addStrength}
-                  className="flex items-center space-x-2 text-green-600 hover:text-green-800 mt-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span className="text-sm">Añadir fortaleza</span>
-                </button>
-              </div>
+              </ul>
             </div>
 
             <div>
-              <h4 className="text-lg font-medium text-red-700 mb-3">DEBILIDADES</h4>
-              <div className="space-y-2">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-lg font-semibold text-gray-800">Debilidades</h4>
+                <button onClick={addWeakness} className="btn-secondary btn-sm">
+                  <Plus className="h-4 w-4 mr-1" /> Añadir
+                </button>
+              </div>
+              <ul className="space-y-2">
                 {weaknesses.map((weakness, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-red-600 w-8">
-                      D{index + 1}
-                    </span>
+                  <li key={index} className="flex items-center space-x-2">
+                    <span className="font-semibold text-gray-600">D{index + 1}:</span>
                     <input
                       type="text"
                       value={weakness}
@@ -265,16 +264,9 @@ const ValueChainEditor = ({ planId, onSave }) => {
                         <Minus className="h-4 w-4" />
                       </button>
                     )}
-                  </div>
+                  </li>
                 ))}
-                <button
-                  onClick={addWeakness}
-                  className="flex items-center space-x-2 text-red-600 hover:text-red-800 mt-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span className="text-sm">Añadir debilidad</span>
-                </button>
-              </div>
+              </ul>
             </div>
           </div>
         </div>
