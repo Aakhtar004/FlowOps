@@ -124,20 +124,26 @@ class PlanService:
                 
                 for field, value in update_data.items():
                     if field in ['values', 'general_objectives'] and value is not None:
+                        # Convertir objetos Pydantic a dicts antes de json.dumps
+                        if field == 'general_objectives' and isinstance(value, list):
+                            value = [obj.dict() if hasattr(obj, 'dict') else obj for obj in value]
                         json_value = json.dumps(value)
-                        
                         setattr(identity, field, json_value)
                     else:
                         setattr(identity, field, value)
             else:
                 # Crear nuevo
+                # Convertir general_objectives a dicts si es necesario
+                general_objectives_value = identity_data.general_objectives
+                if general_objectives_value is not None and isinstance(general_objectives_value, list):
+                    general_objectives_value = [obj.dict() if hasattr(obj, 'dict') else obj for obj in general_objectives_value]
                 
                 identity = CompanyIdentity(
                     strategic_plan_id=plan_id,
                     mission=identity_data.mission,
                     vision=identity_data.vision,
                     values=json.dumps(identity_data.values) if identity_data.values is not None else None,
-                    general_objectives=json.dumps(identity_data.general_objectives) if identity_data.general_objectives is not None else None
+                    general_objectives=json.dumps(general_objectives_value) if general_objectives_value is not None else None
                 )
                 
                 db.add(identity)

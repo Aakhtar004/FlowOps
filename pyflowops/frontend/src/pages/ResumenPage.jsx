@@ -54,6 +54,7 @@ const ResumenPage = () => {
       await exportElementToPdf(resumenRef.current, {
         filename: `resumen-plan-${planId}.pdf`,
         margin: 10,
+        componentSelector: '.bg-white.rounded-lg' // Selecciona cada tarjeta/sección individual
       })
     } catch (e) {
       console.error('Error exporting PDF:', e)
