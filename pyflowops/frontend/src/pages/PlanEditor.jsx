@@ -8,6 +8,8 @@ import IdentityEditor from '../components/plan/IdentityEditor'
 import ValueChainEditor from '../components/plan/ValueChainEditor'
 import BCGMatrixEditor from '../components/plan/BCGMatrixEditor'
 import PorterMatrix from '../components/plan/PorterMatrix'
+import PestEditor from '../components/plan/PestEditor'
+import StrategyIdentificationEditor from '../components/plan/StrategyIdentificationEditor'
 import CompanyInfoEditor from '../components/plan/CompanyInfoEditor'
 import UsersManager from '../components/plan/UsersManager'
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
@@ -186,16 +188,15 @@ const PlanEditor = () => {
       title: 'Análisis PEST',
       path: `/plan/${planId}/pest`,
       icon: Target,
-      component: null, // Implementación a futuro
-      disabled: true
+      component: PestEditor
     },
     {
       id: 'strategies-identification',
       title: 'Identificación de Estrategias',
       path: `/plan/${planId}/strategies-identification`,
       icon: Target,
-      component: null, // Implementación a futuro
-      disabled: true
+      component: StrategyIdentificationEditor,
+      disabled: false
     },
     {
       id: 'came-matrix',
@@ -210,7 +211,7 @@ const PlanEditor = () => {
       title: 'Compartir / Usuarios',
       path: `/plan/${planId}/usuarios`,
       icon: Users,
-      component: null
+      component: UsersManager
     }
   ]
 

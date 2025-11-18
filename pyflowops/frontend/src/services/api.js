@@ -264,4 +264,17 @@ export const plansAPI = {
     const response = await api.post(`/api/v1/plans/${planId}/invitations/${invitationId}/reject`)
     return response.data
   },
+  // PEST Analysis
+  createOrUpdatePestAnalysis: async (planId, data) => {
+    const response = await api.post(`/api/v1/plans/${planId}/pest`, data)
+    return response.data
+  },
+  getPestAnalysis: async (planId) => {
+    const response = await api.get(`/api/v1/plans/${planId}/pest`)
+    return response.data
+  },
+  deletePestAnalysis: async (planId) => {
+    const response = await api.delete(`/api/v1/plans/${planId}/pest`)
+    return response.data
+  },
 }

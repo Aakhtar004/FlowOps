@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft, Download, Building2, Calendar, Users, Target, TrendingUp } from 'lucide-react'
-import { usePlan, useCompanyIdentity, useStrategicAnalysis, useStrategies, useAnalysisTools } from '../hooks/useApi'
+import { usePlan, useCompanyIdentity, useStrategicAnalysis, useStrategies, useAnalysisTools, usePestAnalysis } from '../hooks/useApi'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import { useRef } from 'react'
 import { exportElementToPdf } from '../utils/exportPdf'
@@ -12,10 +12,11 @@ const ResumenPage = () => {
   const { analysis, isLoading: analysisLoading } = useStrategicAnalysis(planId)
   const { strategies, isLoading: strategiesLoading } = useStrategies(planId)
   const { tools, isLoading: toolsLoading } = useAnalysisTools(planId)
+  const { pest, isLoading: pestLoading } = usePestAnalysis(planId)
 
   const resumenRef = useRef(null)
 
-  const isLoading = planLoading || identityLoading || analysisLoading || strategiesLoading || toolsLoading
+  const isLoading = planLoading || identityLoading || analysisLoading || strategiesLoading || toolsLoading || pestLoading
 
   if (isLoading) {
     return (
@@ -61,18 +62,88 @@ const ResumenPage = () => {
     }
   }
 
-  // Fusionar fortalezas y debilidades de todas las fuentes
+  // Organizadas por fuente con indicadores
+  const strengthsBySource = {
+    swot: (analysis?.internal_strengths || []).filter(s => s.trim() !== ''),
+    valueChain: (tools?.value_chain_support?.strengths || []).filter(s => s.trim() !== ''),
+    bcg: (tools?.bcg_matrix_data?.fortalezas || []).filter(s => s.trim() !== '')
+  }
+
+  const weaknessesBySource = {
+    swot: (analysis?.internal_weaknesses || []).filter(w => w.trim() !== ''),
+    valueChain: (tools?.value_chain_support?.weaknesses || []).filter(w => w.trim() !== ''),
+    bcg: (tools?.bcg_matrix_data?.debilidades || []).filter(w => w.trim() !== '')
+  }
+
+  // Fusionar manteniendo orden
   const strengths = [
-    ...(analysis?.internal_strengths || []),
-    ...(tools?.value_chain_support?.strengths || []),
-    ...(tools?.bcg_matrix_data?.fortalezas || [])
-  ].filter(s => s.trim() !== '')
+    ...strengthsBySource.swot,
+    ...strengthsBySource.valueChain,
+    ...strengthsBySource.bcg
+  ]
 
   const weaknesses = [
-    ...(analysis?.internal_weaknesses || []),
-    ...(tools?.value_chain_support?.weaknesses || []),
-    ...(tools?.bcg_matrix_data?.debilidades || [])
-  ].filter(w => w.trim() !== '')
+    ...weaknessesBySource.swot,
+    ...weaknessesBySource.valueChain,
+    ...weaknessesBySource.bcg
+  ]
+
+  // Oportunidades organizadas por fuente
+  const opportunitiesBySource = {
+    swot: (analysis?.external_opportunities || []).filter(o => o && String(o).trim() !== ''),
+    pest: Array.isArray(pest?.opportunities) 
+      ? pest.opportunities.map(o => {
+          if (typeof o === 'string') return o
+          if (o?.opportunity_text) return o.opportunity_text
+          return String(o)
+        }).filter(o => o && String(o).trim() !== '')
+      : [],
+    porter: (tools?.porter_competitive_rivalry ? (() => {
+      try {
+        const parsed = typeof tools.porter_competitive_rivalry === 'string' 
+          ? JSON.parse(tools.porter_competitive_rivalry) 
+          : tools.porter_competitive_rivalry
+        return (parsed?.oportunidades || []).filter(o => o && String(o).trim() !== '')
+      } catch (_) {
+        return []
+      }
+    })() : [])
+  }
+
+  // Amenazas organizadas por fuente
+  const threatsbySource = {
+    swot: (analysis?.external_threats || []).filter(t => t && String(t).trim() !== ''),
+    pest: Array.isArray(pest?.threats)
+      ? pest.threats.map(t => {
+          if (typeof t === 'string') return t
+          if (t?.threat_text) return t.threat_text
+          return String(t)
+        }).filter(t => t && String(t).trim() !== '')
+      : [],
+    porter: (tools?.porter_competitive_rivalry ? (() => {
+      try {
+        const parsed = typeof tools.porter_competitive_rivalry === 'string' 
+          ? JSON.parse(tools.porter_competitive_rivalry) 
+          : tools.porter_competitive_rivalry
+        return (parsed?.amenazas || []).filter(t => t && String(t).trim() !== '')
+      } catch (_) {
+        return []
+      }
+    })() : [])
+  }
+
+  // Arrays fusionados para verificar si hay contenido
+  const opportunities = [
+    ...opportunitiesBySource.swot,
+    ...opportunitiesBySource.pest,
+    ...opportunitiesBySource.porter
+  ]
+
+  const threats = [
+    ...threatsbySource.swot,
+    ...threatsbySource.pest,
+    ...threatsbySource.porter
+  ]
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -256,53 +327,185 @@ const ResumenPage = () => {
               {strengths.length > 0 && (
                 <div className="border-l-4 border-green-500 pl-4">
                   <h3 className="text-lg font-semibold text-green-700 mb-3">Fortalezas</h3>
-                  <ul className="space-y-2">
-                    {strengths.map((strength, index) => (
-                      <li key={index} className="flex items-start">
-                        <span className="font-bold text-green-700 mr-2">F{index + 1}:</span>
-                        <span className="text-gray-700 text-sm">{strength}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="space-y-4">
+                    {strengthsBySource.swot.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-2 uppercase">SWOT</p>
+                        <ul className="space-y-2">
+                          {strengthsBySource.swot.map((strength, index) => (
+                            <li key={`swot-${index}`} className="flex items-start">
+                              <span className="font-bold text-green-700 mr-2">F{index + 1}:</span>
+                              <span className="text-gray-700 text-sm">{strength}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {strengthsBySource.valueChain.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-2 uppercase">Cadena de Valor</p>
+                        <ul className="space-y-2">
+                          {strengthsBySource.valueChain.map((strength, index) => (
+                            <li key={`vc-${index}`} className="flex items-start">
+                              <span className="font-bold text-green-700 mr-2">F{strengthsBySource.swot.length + index + 1}:</span>
+                              <span className="text-gray-700 text-sm">{strength}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {strengthsBySource.bcg.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-2 uppercase">Matriz BCG</p>
+                        <ul className="space-y-2">
+                          {strengthsBySource.bcg.map((strength, index) => (
+                            <li key={`bcg-${index}`} className="flex items-start">
+                              <span className="font-bold text-green-700 mr-2">F{strengthsBySource.swot.length + strengthsBySource.valueChain.length + index + 1}:</span>
+                              <span className="text-gray-700 text-sm">{strength}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
-              {analysis.external_opportunities && analysis.external_opportunities.length > 0 && (
+              {opportunities.length > 0 && (
                 <div className="border-l-4 border-blue-500 pl-4">
                   <h3 className="text-lg font-semibold text-blue-700 mb-3">Oportunidades</h3>
-                  <ul className="space-y-2">
-                    {analysis.external_opportunities.map((opportunity, index) => (
-                      <li key={index} className="flex items-start">
-                        <span className="text-blue-500 mr-2 mt-1">⬆</span>
-                        <span className="text-gray-700 text-sm">{opportunity}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="space-y-4">
+                    {opportunitiesBySource.swot.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-2 uppercase">SWOT</p>
+                        <ul className="space-y-2">
+                          {opportunitiesBySource.swot.map((opportunity, index) => (
+                            <li key={`swot-opp-${index}`} className="flex items-start">
+                              <span className="text-blue-500 mr-2 mt-1">⬆</span>
+                              <span className="text-gray-700 text-sm">{opportunity}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {opportunitiesBySource.pest.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-2 uppercase">PEST</p>
+                        <ul className="space-y-2">
+                          {opportunitiesBySource.pest.map((opportunity, index) => (
+                            <li key={`pest-opp-${index}`} className="flex items-start">
+                              <span className="text-blue-500 mr-2 mt-1">⬆</span>
+                              <span className="text-gray-700 text-sm">{opportunity}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {opportunitiesBySource.porter.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-2 uppercase">Matriz de Porter</p>
+                        <ul className="space-y-2">
+                          {opportunitiesBySource.porter.map((opportunity, index) => (
+                            <li key={`porter-opp-${index}`} className="flex items-start">
+                              <span className="text-blue-500 mr-2 mt-1">⬆</span>
+                              <span className="text-gray-700 text-sm">{opportunity}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
               {weaknesses.length > 0 && (
                 <div className="border-l-4 border-orange-500 pl-4">
                   <h3 className="text-lg font-semibold text-orange-700 mb-3">Debilidades</h3>
-                  <ul className="space-y-2">
-                    {weaknesses.map((weakness, index) => (
-                      <li key={index} className="flex items-start">
-                        <span className="font-bold text-orange-700 mr-2">D{index + 1}:</span>
-                        <span className="text-gray-700 text-sm">{weakness}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="space-y-4">
+                    {weaknessesBySource.swot.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-2 uppercase">SWOT</p>
+                        <ul className="space-y-2">
+                          {weaknessesBySource.swot.map((weakness, index) => (
+                            <li key={`swot-weak-${index}`} className="flex items-start">
+                              <span className="font-bold text-orange-700 mr-2">D{index + 1}:</span>
+                              <span className="text-gray-700 text-sm">{weakness}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {weaknessesBySource.valueChain.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-2 uppercase">Cadena de Valor</p>
+                        <ul className="space-y-2">
+                          {weaknessesBySource.valueChain.map((weakness, index) => (
+                            <li key={`vc-weak-${index}`} className="flex items-start">
+                              <span className="font-bold text-orange-700 mr-2">D{weaknessesBySource.swot.length + index + 1}:</span>
+                              <span className="text-gray-700 text-sm">{weakness}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {weaknessesBySource.bcg.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-2 uppercase">Matriz BCG</p>
+                        <ul className="space-y-2">
+                          {weaknessesBySource.bcg.map((weakness, index) => (
+                            <li key={`bcg-weak-${index}`} className="flex items-start">
+                              <span className="font-bold text-orange-700 mr-2">D{weaknessesBySource.swot.length + weaknessesBySource.valueChain.length + index + 1}:</span>
+                              <span className="text-gray-700 text-sm">{weakness}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
-              {analysis.external_threats && analysis.external_threats.length > 0 && (
+              {threats.length > 0 && (
                 <div className="border-l-4 border-red-500 pl-4">
                   <h3 className="text-lg font-semibold text-red-700 mb-3">Amenazas</h3>
-                  <ul className="space-y-2">
-                    {analysis.external_threats.map((threat, index) => (
-                      <li key={index} className="flex items-start">
-                        <span className="text-red-500 mr-2 mt-1">✕</span>
-                        <span className="text-gray-700 text-sm">{threat}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="space-y-4">
+                    {threatsbySource.swot.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-2 uppercase">SWOT</p>
+                        <ul className="space-y-2">
+                          {threatsbySource.swot.map((threat, index) => (
+                            <li key={`swot-threat-${index}`} className="flex items-start">
+                              <span className="text-red-500 mr-2 mt-1">✕</span>
+                              <span className="text-gray-700 text-sm">{threat}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {threatsbySource.pest.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-2 uppercase">PEST</p>
+                        <ul className="space-y-2">
+                          {threatsbySource.pest.map((threat, index) => (
+                            <li key={`pest-threat-${index}`} className="flex items-start">
+                              <span className="text-red-500 mr-2 mt-1">✕</span>
+                              <span className="text-gray-700 text-sm">{threat}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {threatsbySource.porter.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-2 uppercase">Matriz de Porter</p>
+                        <ul className="space-y-2">
+                          {threatsbySource.porter.map((threat, index) => (
+                            <li key={`porter-threat-${index}`} className="flex items-start">
+                              <span className="text-red-500 mr-2 mt-1">✕</span>
+                              <span className="text-gray-700 text-sm">{threat}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

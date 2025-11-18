@@ -145,6 +145,26 @@ function AppInner({ isAuthenticated, user }) {
               }
             />
             <Route
+              path="/plan/:planId/pest"
+              element={
+                isAuthenticated ? (
+                  <PlanEditor />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/plan/:planId/strategies-identification"
+              element={
+                isAuthenticated ? (
+                  <PlanEditor />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
               path="/plan/:planId/estrategias"
               element={
                 isAuthenticated ? (

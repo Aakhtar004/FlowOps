@@ -59,6 +59,80 @@ class StrategicPlan(Base):
     strategies = relationship("Strategies", back_populates="strategic_plan", uselist=False, lazy='select', cascade="all, delete-orphan")
 
 
+class PestAnalysis(Base):
+    """
+    Análisis PEST: Factores Políticos, Económicos, Sociales y Tecnológicos.
+    """
+    __tablename__ = "pest_analysis"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    strategic_plan_id = Column(Integer, ForeignKey("strategic_plans.id"), nullable=False)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relaciones
+    strategic_plan = relationship("StrategicPlan", lazy='select')
+    responses = relationship("PestResponse", back_populates="pest_analysis", lazy='select', cascade="all, delete-orphan")
+    opportunities = relationship("Opportunity", back_populates="pest_analysis", lazy='select', cascade="all, delete-orphan")
+    threats = relationship("Threat", back_populates="pest_analysis", lazy='select', cascade="all, delete-orphan")
+
+
+class PestResponse(Base):
+    """
+    Respuestas individuales a preguntas PEST.
+    """
+    __tablename__ = "pest_response"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    pest_analysis_id = Column(Integer, ForeignKey("pest_analysis.id"), nullable=False)
+    question_number = Column(Integer, nullable=False)
+    category = Column(String(50), nullable=False)  # 'social', 'politico', 'economico', 'tecnologico', 'ambiental'
+    response_value = Column(Integer, nullable=False)  # 0-4
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relación
+    pest_analysis = relationship("PestAnalysis", back_populates="responses")
+
+
+class Opportunity(Base):
+    """
+    Oportunidades identificadas en PEST.
+    """
+    __tablename__ = "opportunities"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    pest_analysis_id = Column(Integer, ForeignKey("pest_analysis.id"), nullable=False)
+    opportunity_text = Column(Text, nullable=False)
+    order_position = Column(Integer, nullable=True)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relación
+    pest_analysis = relationship("PestAnalysis", back_populates="opportunities")
+
+
+class Threat(Base):
+    """
+    Amenazas identificadas en PEST.
+    """
+    __tablename__ = "threats"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    pest_analysis_id = Column(Integer, ForeignKey("pest_analysis.id"), nullable=False)
+    threat_text = Column(Text, nullable=False)
+    order_position = Column(Integer, nullable=True)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relación
+    pest_analysis = relationship("PestAnalysis", back_populates="threats")
+
+
 class CompanyIdentity(Base):
     """
     Identidad de la empresa: Misión, Visión, Valores, Objetivos.

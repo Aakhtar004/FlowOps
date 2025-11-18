@@ -512,3 +512,40 @@ export const usePlanUsers = (planId) => {
     isRemoving: removeUserMutation.isLoading,
   }
 }
+
+// Hook para análisis PEST
+export const usePestAnalysis = (planId) => {
+  const queryClient = useQueryClient()
+
+  const pestQuery = useQuery(
+    ['pestAnalysis', planId],
+    () => plansAPI.getPestAnalysis(planId),
+    {
+      enabled: !!planId,
+      retry: false,
+      onError: (error) => {
+        console.error('Error loading PEST analysis:', error)
+      }
+    }
+  )
+
+  const updatePestMutation = useMutation(
+    (data) => plansAPI.createOrUpdatePestAnalysis(planId, data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['pestAnalysis', planId])
+      },
+      onError: (error) => {
+        console.error('Error updating PEST analysis:', error)
+      },
+    }
+  )
+
+  return {
+    pest: pestQuery.data || { responses: [], opportunities: [], threats: [] },
+    isLoading: pestQuery.isLoading,
+    error: pestQuery.error,
+    updatePest: updatePestMutation.mutate,
+    isUpdating: updatePestMutation.isLoading,
+  }
+}

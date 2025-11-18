@@ -2,7 +2,7 @@ import structlog
 from typing import List
 import json
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Body
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -1040,22 +1040,207 @@ async def get_plan_users(
 
 @router.delete("/{plan_id}/users/{user_id}")
 async def remove_user_from_plan(
-   plan_id: int,
-   user_id: int,
-   current_user: User = Depends(get_current_active_user),
-   db: Session = Depends(get_db)
+    plan_id: int,
+    user_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
 ):
-   """
-   Remover usuario de un plan (solo owner).
-   """
-   success = PlanService.remove_user_from_plan(db, plan_id, current_user.id, user_id)  # type: ignore
-   if not success:
-       raise HTTPException(
-           status_code=status.HTTP_404_NOT_FOUND,
-           detail="Usuario no encontrado en el plan o no tienes permisos"
-       )
-   return {"message": "Usuario removido del plan correctamente"}
+    """
+    Remover usuario de un plan (solo owner).
+    """
+    success = PlanService.remove_user_from_plan(db, plan_id, current_user.id, user_id)  # type: ignore
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuario no encontrado en el plan o no tienes permisos"
+        )
+    return {"message": "Usuario removido del plan correctamente"}
 
 
+# ENDPOINTS PARA ANÁLISIS PEST
+@router.post("/{plan_id}/pest", response_model=dict)
+async def create_or_update_pest_analysis(
+    plan_id: int,
+    pest_data: dict = Body(...),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Crear o actualizar análisis PEST para un plan.
+    """
+    logger = structlog.get_logger()
+    try:
+        # Verificar acceso al plan
+        plan = PlanService.get_strategic_plan(db, plan_id)
+        if not plan:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Plan no encontrado"
+            )
+        
+        access = PlanService.check_plan_access(db, plan_id, current_user.id)  # type: ignore
+        if not access:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tienes permisos para acceder a este plan"
+            )
+
+        # Convertir datos a esquema Pydantic
+        from app.schemas.plan_schema import PestAnalysisCreate, PestResponseItem, OpportunityItem, ThreatItem
+        
+        responses = [
+            PestResponseItem(**r) for r in pest_data.get('responses', [])
+        ]
+        opportunities = [
+            OpportunityItem(**o) for o in pest_data.get('opportunities', [])
+        ]
+        threats = [
+            ThreatItem(**t) for t in pest_data.get('threats', [])
+        ]
+        
+        pest_create = PestAnalysisCreate(
+            strategic_plan_id=plan_id,
+            responses=responses,
+            opportunities=opportunities,
+            threats=threats
+        )
+
+        # Guardar en base de datos
+        pest_analysis = PlanService.create_or_update_pest_analysis(db, plan_id, pest_create)
+        
+        logger.info("PEST analysis created/updated", plan_id=plan_id, user_id=current_user.id)
+
+        return {
+            "id": pest_analysis.id,
+            "strategic_plan_id": pest_analysis.strategic_plan_id,
+            "message": "Análisis PEST guardado exitosamente"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error creating/updating PEST analysis", plan_id=plan_id, error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error guardando análisis PEST"
+        )
+
+
+@router.get("/{plan_id}/pest", response_model=dict)
+async def get_pest_analysis(
+    plan_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Obtener análisis PEST de un plan.
+    """
+    logger = structlog.get_logger()
+    try:
+        # Verificar acceso al plan
+        access = PlanService.check_plan_access(db, plan_id, current_user.id)  # type: ignore
+        if not access:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tienes permisos para acceder a este plan"
+            )
+
+        pest_analysis = PlanService.get_pest_analysis(db, plan_id)
+        
+        if not pest_analysis:
+            return {
+                "id": None,
+                "strategic_plan_id": plan_id,
+                "responses": [],
+                "opportunities": [],
+                "threats": []
+            }
+
+        # Serializar respuestas
+        responses = [
+            {
+                "id": r.id,
+                "question_number": r.question_number,
+                "category": r.category,
+                "response_value": r.response_value
+            }
+            for r in pest_analysis.responses
+        ]
+
+        # Serializar oportunidades
+        opportunities = [
+            {
+                "id": o.id,
+                "opportunity_text": o.opportunity_text,
+                "order_position": o.order_position
+            }
+            for o in sorted(pest_analysis.opportunities, key=lambda x: x.order_position or 0)
+        ]
+
+        # Serializar amenazas
+        threats = [
+            {
+                "id": t.id,
+                "threat_text": t.threat_text,
+                "order_position": t.order_position
+            }
+            for t in sorted(pest_analysis.threats, key=lambda x: x.order_position or 0)
+        ]
+
+        logger.info("Retrieved PEST analysis", plan_id=plan_id, user_id=current_user.id)
+
+        return {
+            "id": pest_analysis.id,
+            "strategic_plan_id": pest_analysis.strategic_plan_id,
+            "responses": responses,
+            "opportunities": opportunities,
+            "threats": threats
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error retrieving PEST analysis", plan_id=plan_id, error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error obteniendo análisis PEST"
+        )
+
+
+@router.delete("/{plan_id}/pest")
+async def delete_pest_analysis(
+    plan_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Eliminar análisis PEST de un plan.
+    """
+    logger = structlog.get_logger()
+    try:
+        # Verificar acceso al plan
+        access = PlanService.check_plan_access(db, plan_id, current_user.id, require_owner=True)  # type: ignore
+        if not access:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tienes permisos para eliminar análisis de este plan"
+            )
+
+        success = PlanService.delete_pest_analysis(db, plan_id)
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Análisis PEST no encontrado"
+            )
+
+        logger.info("PEST analysis deleted", plan_id=plan_id, user_id=current_user.id)
+        return {"message": "Análisis PEST eliminado exitosamente"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error deleting PEST analysis", plan_id=plan_id, error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error eliminando análisis PEST"
+        )
 
 

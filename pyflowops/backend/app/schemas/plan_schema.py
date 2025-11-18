@@ -585,3 +585,53 @@ class InvitationResponse(BaseModel):
     """Esquema para respuesta de invitación."""
     message: str
     invitation_id: Optional[int]
+
+# Esquemas para PEST
+class PestResponseItem(BaseModel):
+    """Esquema para respuesta individual de pregunta PEST."""
+    question_number: int
+    category: str
+    response_value: int
+
+
+class OpportunityItem(BaseModel):
+    """Esquema para oportunidad en PEST."""
+    id: Optional[int] = None
+    opportunity_text: str
+    order_position: Optional[int] = None
+
+
+class ThreatItem(BaseModel):
+    """Esquema para amenaza en PEST."""
+    id: Optional[int] = None
+    threat_text: str
+    order_position: Optional[int] = None
+
+
+class PestAnalysisBase(BaseModel):
+    """Esquema base para análisis PEST."""
+    responses: List[PestResponseItem] = []
+    opportunities: List[OpportunityItem] = []
+    threats: List[ThreatItem] = []
+
+
+class PestAnalysisCreate(PestAnalysisBase):
+    """Esquema para crear análisis PEST."""
+    strategic_plan_id: int
+
+
+class PestAnalysisUpdate(BaseModel):
+    """Esquema para actualizar análisis PEST."""
+    responses: Optional[List[PestResponseItem]] = None
+    opportunities: Optional[List[OpportunityItem]] = None
+    threats: Optional[List[ThreatItem]] = None
+
+
+class PestAnalysis(PestAnalysisBase):
+    """Esquema para respuesta de análisis PEST."""
+    id: int
+    strategic_plan_id: int
+    created_at: datetime
+    updated_at: Optional[datetime]
+    
+    model_config = ConfigDict(from_attributes=True)

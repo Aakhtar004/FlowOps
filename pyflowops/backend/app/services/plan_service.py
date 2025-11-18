@@ -5,7 +5,8 @@ import json
 
 from app.models.plan_model import (
     StrategicPlan, CompanyIdentity, StrategicAnalysis,
-    AnalysisTools, Strategies, User, PlanUser, Notification
+    AnalysisTools, Strategies, User, PlanUser, Notification,
+    PestAnalysis, PestResponse, Opportunity, Threat
 )
 from app.db.database import transaction
 from app.schemas.plan_schema import (
@@ -14,7 +15,8 @@ from app.schemas.plan_schema import (
     StrategicAnalysisCreate, StrategicAnalysisUpdate,
     AnalysisToolsCreate, AnalysisToolsUpdate,
     StrategiesCreate, StrategiesUpdate,
-    ExecutiveSummary
+    ExecutiveSummary,
+    PestAnalysisCreate, PestAnalysisUpdate
 )
 
 
@@ -725,7 +727,87 @@ class PlanService:
 
         return plan_user
 
+    # Métodos para Análisis PEST
     @staticmethod
+    def create_or_update_pest_analysis(
+        db: Session,
+        plan_id: int,
+        pest_data: PestAnalysisCreate
+    ) -> Optional[PestAnalysis]:
+        """Crear o actualizar análisis PEST para un plan."""
+        # Obtener o crear PestAnalysis
+        pest = db.query(PestAnalysis).filter(
+            PestAnalysis.strategic_plan_id == plan_id
+        ).first()
+
+        with transaction(db):
+            if not pest:
+                pest = PestAnalysis(strategic_plan_id=plan_id)
+                db.add(pest)
+                db.flush()
+
+            # Eliminar respuestas anteriores
+            db.query(PestResponse).filter(
+                PestResponse.pest_analysis_id == pest.id
+            ).delete()
+
+            # Agregar nuevas respuestas
+            for response in pest_data.responses:
+                pest_response = PestResponse(
+                    pest_analysis_id=pest.id,
+                    question_number=response.question_number,
+                    category=response.category,
+                    response_value=response.response_value
+                )
+                db.add(pest_response)
+
+            # Eliminar oportunidades anteriores
+            db.query(Opportunity).filter(
+                Opportunity.pest_analysis_id == pest.id
+            ).delete()
+
+            # Agregar nuevas oportunidades
+            for idx, opp in enumerate(pest_data.opportunities):
+                opportunity = Opportunity(
+                    pest_analysis_id=pest.id,
+                    opportunity_text=opp.opportunity_text,
+                    order_position=idx
+                )
+                db.add(opportunity)
+
+            # Eliminar amenazas anteriores
+            db.query(Threat).filter(
+                Threat.pest_analysis_id == pest.id
+            ).delete()
+
+            # Agregar nuevas amenazas
+            for idx, threat in enumerate(pest_data.threats):
+                threat_item = Threat(
+                    pest_analysis_id=pest.id,
+                    threat_text=threat.threat_text,
+                    order_position=idx
+                )
+                db.add(threat_item)
+
+        return PlanService.get_pest_analysis(db, plan_id)
+
+    @staticmethod
+    def get_pest_analysis(db: Session, plan_id: int) -> Optional[PestAnalysis]:
+        """Obtener análisis PEST de un plan."""
+        return db.query(PestAnalysis).filter(
+            PestAnalysis.strategic_plan_id == plan_id
+        ).first()
+
+    @staticmethod
+    def delete_pest_analysis(db: Session, plan_id: int) -> bool:
+        """Eliminar análisis PEST de un plan."""
+        pest = PlanService.get_pest_analysis(db, plan_id)
+        if not pest:
+            return False
+
+        with transaction(db):
+            db.delete(pest)
+        return True    @staticmethod
     def respond_to_invitation(db: Session, invitation_id: int, user_id: int, accept: bool) -> bool:
         """Aceptar o rechazar una invitación."""
         plan_user = db.query(PlanUser).filter(

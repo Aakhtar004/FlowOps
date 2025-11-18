@@ -93,6 +93,41 @@ CREATE TABLE IF NOT EXISTS strategies (
   updated_at TIMESTAMPTZ
 );
 
+CREATE TABLE IF NOT EXISTS pest_analysis (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  strategic_plan_id INTEGER NOT NULL REFERENCES strategic_plans(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS pest_response (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  pest_analysis_id INTEGER NOT NULL REFERENCES pest_analysis(id) ON DELETE CASCADE,
+  question_number INTEGER NOT NULL,
+  category VARCHAR(50) NOT NULL,
+  response_value INTEGER NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS opportunities (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  pest_analysis_id INTEGER NOT NULL REFERENCES pest_analysis(id) ON DELETE CASCADE,
+  opportunity_text TEXT NOT NULL,
+  order_position INTEGER,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS threats (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  pest_analysis_id INTEGER NOT NULL REFERENCES pest_analysis(id) ON DELETE CASCADE,
+  threat_text TEXT NOT NULL,
+  order_position INTEGER,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ
+);
+
 CREATE TABLE IF NOT EXISTS plan_users (
   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   plan_id INTEGER NOT NULL REFERENCES strategic_plans(id) ON DELETE CASCADE,
@@ -119,6 +154,10 @@ CREATE TABLE IF NOT EXISTS notifications (
 -- Índices (opcionales si ya existen por UNIQUE o PK)
 CREATE INDEX IF NOT EXISTS idx_plan_users_plan_id ON plan_users (plan_id);
 CREATE INDEX IF NOT EXISTS idx_plan_users_user_id ON plan_users (user_id);
+CREATE INDEX IF NOT EXISTS idx_pest_analysis_plan_id ON pest_analysis (strategic_plan_id);
+CREATE INDEX IF NOT EXISTS idx_pest_response_analysis_id ON pest_response (pest_analysis_id);
+CREATE INDEX IF NOT EXISTS idx_opportunities_analysis_id ON opportunities (pest_analysis_id);
+CREATE INDEX IF NOT EXISTS idx_threats_analysis_id ON threats (pest_analysis_id);
 
 -- Notas:
 -- - El backend también ejecuta create_tables() y run_migrations() en el arranque.
